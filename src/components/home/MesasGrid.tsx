@@ -15,22 +15,33 @@ export default function MesasGrid() {
   const [mesas, setMesas] = useState<Mesa[]>([])
   const [loading, setLoading] = useState(true)
 
+  const [ordenesActivas, setOrdenesActivas] = useState<Record<string, number>>({})
+
   useEffect(() => {
-    fetchMesas()
+    fetchTodo()
     const channel = supabase
       .channel('mesas-home')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'mesas' }, fetchMesas)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mesas' }, fetchTodo)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ordenes' }, fetchTodo)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [])
 
-  async function fetchMesas() {
-    const { data } = await supabase.from('mesas').select('*').order('numero')
-    if (data) setMesas(data)
+  async function fetchTodo() {
+    const [{ data: mesasData }, { data: ordenesData }] = await Promise.all([
+      supabase.from('mesas').select('*').order('numero'),
+      supabase.from('ordenes').select('mesa_id').in('estado', ['pendiente', 'en_preparacion', 'listo']),
+    ])
+    if (mesasData) setMesas(mesasData)
+    if (ordenesData) {
+      const conteo: Record<string, number> = {}
+      ordenesData.forEach(o => { conteo[o.mesa_id] = (conteo[o.mesa_id] ?? 0) + 1 })
+      setOrdenesActivas(conteo)
+    }
     setLoading(false)
   }
 
-  const libres = mesas.filter(m => m.estado === 'libre').length
+  const libres   = mesas.filter(m => m.estado === 'libre').length
   const ocupadas = mesas.filter(m => m.estado === 'ocupada').length
   const porPagar = mesas.filter(m => m.estado === 'por_pagar').length
 
@@ -110,13 +121,20 @@ export default function MesasGrid() {
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                       </svg>
-                      <span style={{ color: '#78350F', fontSize: '0.75rem' }}>{mesa.capacidad} personas</span>
+                      <span style={{ color: '#78350F', fontSize: '0.75rem' }}>{mesa.capacidad} pers.</span>
                     </div>
-                    {mesa.estado !== 'libre' && (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={e.accent} strokeWidth="2" strokeLinecap="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                      </svg>
+                    {/* Órdenes activas badge */}
+                    {(ordenesActivas[mesa.id] ?? 0) > 0 && (
+                      <span
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+                        style={{ background: '#FEF3E2', color: '#92400E', border: '1px solid #C9A96E' }}
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                          <rect x="9" y="3" width="6" height="4" rx="1"/>
+                        </svg>
+                        {ordenesActivas[mesa.id]}
+                      </span>
                     )}
                   </div>
                 </div>

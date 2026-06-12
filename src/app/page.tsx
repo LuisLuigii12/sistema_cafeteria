@@ -32,17 +32,29 @@ export default function Home() {
           </div>
         </div>
 
-        <Link
-          href="/cocina"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 cursor-pointer hover:opacity-90"
-          style={{ background: '#C9A96E', color: '#1C0A00' }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/>
-            <line x1="6" y1="17" x2="18" y2="17"/>
-          </svg>
-          Ver Cocina
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/cafeteria"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 cursor-pointer hover:opacity-90"
+            style={{ background: 'rgba(201,169,110,0.15)', color: '#C9A96E', border: '1px solid rgba(201,169,110,0.4)' }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
+            </svg>
+            Cafetería
+          </Link>
+          <Link
+            href="/cocina"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 cursor-pointer hover:opacity-90"
+            style={{ background: '#C9A96E', color: '#1C0A00' }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/>
+              <line x1="6" y1="17" x2="18" y2="17"/>
+            </svg>
+            Cocina
+          </Link>
+        </div>
       </header>
 
       <main className="p-6 max-w-7xl mx-auto">

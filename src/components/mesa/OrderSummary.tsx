@@ -3,6 +3,56 @@
 import { useState } from 'react'
 import type { ItemCarrito } from '@/types'
 
+function BotonEnviar({ mesaNumero, enviando, onEnviar }: { mesaNumero: number; enviando: boolean; onEnviar: () => void }) {
+  const [confirmando, setConfirmando] = useState(false)
+
+  if (enviando) {
+    return (
+      <div className="w-full py-3.5 rounded-xl text-sm font-semibold text-center" style={{ background: '#E8D5BB', color: '#78350F' }}>
+        Enviando orden...
+      </div>
+    )
+  }
+
+  if (confirmando) {
+    return (
+      <div className="space-y-2">
+        <p className="text-xs text-center font-medium" style={{ color: '#78350F' }}>¿Confirmar envío?</p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => setConfirmando(false)}
+            className="py-3 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-200"
+            style={{ background: '#F5EDE0', color: '#78350F', border: '1px solid #E8D5BB' }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => { setConfirmando(false); onEnviar() }}
+            className="py-3 rounded-xl text-sm font-bold cursor-pointer transition-all duration-200"
+            style={{ background: '#1C0A00', color: '#FEF8F0' }}
+          >
+            Enviar
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      onClick={() => setConfirmando(true)}
+      className="w-full py-3.5 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer hover:opacity-90 flex items-center justify-center gap-2"
+      style={{ background: '#1C0A00', color: '#FEF8F0' }}
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+      Enviar — Mesa {mesaNumero}
+    </button>
+  )
+}
+
 interface Props {
   carrito: ItemCarrito[]
   mesaNumero: number
@@ -120,19 +170,15 @@ export default function OrderSummary({
       <div className="p-4 space-y-3" style={{ borderTop: '1px solid var(--border)' }}>
         <div className="flex justify-between items-center">
           <span className="font-semibold" style={{ color: 'var(--text-muted)' }}>Total</span>
-          <span className="font-serif text-2xl font-semibold" style={{ color: 'var(--espresso)' }}>${total.toFixed(2)}</span>
+          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.5rem', fontWeight: 700, color: '#1C0A00' }}>
+            ${total.toFixed(2)}
+          </span>
         </div>
-        <button
-          onClick={onEnviar}
-          disabled={enviando}
-          className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer"
-          style={{
-            background: enviando ? 'var(--border)' : 'var(--espresso)',
-            color: enviando ? 'var(--text-muted)' : '#FEF8F0',
-          }}
-        >
-          {enviando ? 'Enviando orden...' : `Enviar a Cocina — Mesa ${mesaNumero}`}
-        </button>
+        <BotonEnviar
+          mesaNumero={mesaNumero}
+          enviando={enviando}
+          onEnviar={onEnviar}
+        />
       </div>
     </div>
   )

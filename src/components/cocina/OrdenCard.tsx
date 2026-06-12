@@ -36,6 +36,26 @@ export default function OrdenCard({ orden }: Props) {
     setCargando(false)
   }
 
+  async function entregar() {
+    if (!orden.mesa_id) return
+    setCargando(true)
+    await supabase.from('ordenes').update({ estado: 'entregado' }).eq('id', orden.id)
+    // Si no quedan órdenes activas para esta mesa, liberar la mesa
+    const { data: pendientes } = await supabase
+      .from('ordenes')
+      .select('id')
+      .eq('mesa_id', orden.mesa_id)
+      .in('estado', ['pendiente', 'en_preparacion', 'listo'])
+      .neq('id', orden.id)
+    if (!pendientes || pendientes.length === 0) {
+      const { data: mesa } = await supabase.from('mesas').select('estado').eq('id', orden.mesa_id).single()
+      if (mesa && mesa.estado !== 'por_pagar') {
+        await supabase.from('mesas').update({ estado: 'libre' }).eq('id', orden.mesa_id)
+      }
+    }
+    setCargando(false)
+  }
+
   const totalItems = orden.orden_items?.reduce((s, i) => s + i.cantidad, 0) ?? 0
 
   const accentColor =
@@ -123,16 +143,25 @@ export default function OrdenCard({ orden }: Props) {
               ? 'Actualizando...'
               : siguienteEstado === 'en_preparacion'
               ? 'Iniciar preparación'
-              : '✓ Marcar listo'}
+              : 'Marcar listo'}
           </button>
-        ) : (
-          <div
-            className="w-full py-3 rounded-xl text-sm font-bold text-center mt-1"
-            style={{ background: 'rgba(34,197,94,0.15)', color: '#22C55E' }}
+        ) : orden.estado === 'listo' ? (
+          <button
+            onClick={entregar}
+            disabled={cargando}
+            className="w-full py-3 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 hover:opacity-90 mt-1 flex items-center justify-center gap-2"
+            style={{ background: '#1D4ED8', color: '#EFF6FF' }}
           >
-            ✓ Listo para servir
-          </div>
-        )}
+            {cargando ? 'Entregando...' : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+                Entregar
+              </>
+            )}
+          </button>
+        ) : null}
       </div>
     </div>
   )
