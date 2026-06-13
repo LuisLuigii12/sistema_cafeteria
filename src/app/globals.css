@@ -52,11 +52,22 @@
   touch-action: manipulation;
 }
 
-body {
+html, body {
   background: var(--bg-cream);
   color: var(--text-dark);
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Tablet: evita rebote de scroll y respeta el notch */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Evita selección de texto y resaltado al tocar (tablets/kiosko) */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .font-serif {

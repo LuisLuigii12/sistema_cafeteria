@@ -1,11 +1,13 @@
 export type EstadoOrden = 'pendiente' | 'en_preparacion' | 'listo' | 'entregado' | 'cancelado'
 export type EstadoMesa = 'libre' | 'ocupada' | 'por_pagar'
+export type TipoDestino = 'cocina' | 'cafeteria'
 
 export interface Categoria {
   id: string
   nombre: string
   orden: number
   icono: string | null
+  tipo: TipoDestino
 }
 
 export interface ProductoOpcion {
@@ -61,6 +63,7 @@ export interface Orden {
   id: string
   mesa_id: string
   estado: EstadoOrden
+  destino: TipoDestino
   created_at: string
   updated_at: string
   total: number

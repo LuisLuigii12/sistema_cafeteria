@@ -3,10 +3,12 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import SectionSelector from '@/components/mesa/SectionSelector'
 import CategoryFilter from '@/components/mesa/CategoryFilter'
 import MenuGrid from '@/components/mesa/MenuGrid'
 import OrderSummary from '@/components/mesa/OrderSummary'
-import type { Categoria, Producto, Mesa, ItemCarrito } from '@/types'
+import ActiveOrdersBanner from '@/components/mesa/ActiveOrdersBanner'
+import type { Categoria, Producto, Mesa, ItemCarrito, TipoDestino, Orden } from '@/types'
 
 export default function MesaPage() {
   const params = useParams()
@@ -16,137 +18,161 @@ export default function MesaPage() {
   const [mesa, setMesa] = useState<Mesa | null>(null)
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [productos, setProductos] = useState<Producto[]>([])
+  const [seccion, setSeccion] = useState<TipoDestino>('cafeteria')
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null)
   const [carrito, setCarrito] = useState<ItemCarrito[]>([])
+  const [ordenesActivas, setOrdenesActivas] = useState<Orden[]>([])
   const [enviando, setEnviando] = useState(false)
+  const [cerrando, setCerrando] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [toast, setToast] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
 
   useEffect(() => {
     async function cargarDatos() {
-      const [{ data: mesaData }, { data: catData }, { data: prodData }, opcRes] = await Promise.all([
+      const [{ data: mesaData }, { data: catData }, { data: prodData }, { data: ordenesData }, opcRes] = await Promise.all([
         supabase.from('mesas').select('*').eq('id', mesaId).single(),
         supabase.from('categorias').select('*').order('orden'),
         supabase.from('productos').select('*, categorias(*)').eq('disponible', true).order('nombre'),
+        supabase.from('ordenes').select('*, orden_items(*, productos(nombre))').eq('mesa_id', mesaId).in('estado', ['pendiente', 'en_preparacion', 'listo']).order('created_at'),
         supabase.from('producto_opciones').select('*'),
       ])
-
       if (mesaData) setMesa(mesaData)
       if (catData) setCategorias(catData)
       if (prodData) {
         const opciones = opcRes.data ?? []
-        setProductos(prodData.map((p) => ({
-          ...p,
-          producto_opciones: opciones.filter((o) => o.producto_id === p.id),
-        })))
+        setProductos(prodData.map((p) => ({ ...p, producto_opciones: opciones.filter((o) => o.producto_id === p.id) })))
       }
+      if (ordenesData) setOrdenesActivas(ordenesData)
       setLoading(false)
     }
-
     cargarDatos()
+
+    const channel = supabase
+      .channel(`mesa-ordenes-${mesaId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ordenes', filter: `mesa_id=eq.${mesaId}` }, cargarDatos)
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [mesaId])
 
-  const productosFiltrados = categoriaActiva
-    ? productos.filter((p) => p.categoria_id === categoriaActiva)
-    : productos
+  // Al cambiar sección, limpiar categoría activa
+  function cambiarSeccion(s: TipoDestino) {
+    setSeccion(s)
+    setCategoriaActiva(null)
+  }
 
-  function mostrarToast(msg: string) {
-    setToast(msg)
-    setTimeout(() => setToast(null), 3000)
+  const categoriasFiltradas = categorias.filter(c => c.tipo === seccion)
+
+  const productosFiltrados = productos.filter(p => {
+    const esDeLaSeccion = p.categorias?.tipo === seccion
+    const esDeLaCategoria = categoriaActiva ? p.categoria_id === categoriaActiva : true
+    return esDeLaSeccion && esDeLaCategoria
+  })
+
+  const itemsCafeteria = carrito.filter(i => i.producto.categorias?.tipo === 'cafeteria')
+  const itemsCocina = carrito.filter(i => i.producto.categorias?.tipo === 'cocina')
+
+  function mostrarToast(msg: string, ok = true) {
+    setToast({ msg, ok })
+    setTimeout(() => setToast(null), 3500)
   }
 
   const agregarAlCarrito = useCallback((producto: Producto) => {
-    setCarrito((prev) => {
-      const existe = prev.find((i) => i.producto.id === producto.id)
-      if (existe) {
-        return prev.map((i) =>
-          i.producto.id === producto.id ? { ...i, cantidad: i.cantidad + 1 } : i
-        )
-      }
+    setCarrito(prev => {
+      const existe = prev.find(i => i.producto.id === producto.id)
+      if (existe) return prev.map(i => i.producto.id === producto.id ? { ...i, cantidad: i.cantidad + 1 } : i)
       return [...prev, { producto, cantidad: 1, notas: '' }]
     })
   }, [])
 
   const actualizarCantidad = useCallback((productoId: string, cantidad: number) => {
     if (cantidad <= 0) {
-      setCarrito((prev) => prev.filter((i) => i.producto.id !== productoId))
+      setCarrito(prev => prev.filter(i => i.producto.id !== productoId))
     } else {
-      setCarrito((prev) =>
-        prev.map((i) => (i.producto.id === productoId ? { ...i, cantidad } : i))
-      )
+      setCarrito(prev => prev.map(i => i.producto.id === productoId ? { ...i, cantidad } : i))
     }
   }, [])
 
   const actualizarNota = useCallback((productoId: string, nota: string) => {
-    setCarrito((prev) =>
-      prev.map((i) => (i.producto.id === productoId ? { ...i, notas: nota } : i))
-    )
+    setCarrito(prev => prev.map(i => i.producto.id === productoId ? { ...i, notas: nota } : i))
   }, [])
-
-  async function solicitarCuenta() {
-    await supabase.from('mesas').update({ estado: 'por_pagar' }).eq('id', mesaId)
-    setMesa((prev) => prev ? { ...prev, estado: 'por_pagar' } : null)
-    mostrarToast('Cuenta solicitada')
-  }
-
-  async function liberarMesa() {
-    await supabase.from('mesas').update({ estado: 'libre' }).eq('id', mesaId)
-    router.push('/')
-  }
 
   async function enviarOrden() {
     if (carrito.length === 0 || !mesa) return
     setEnviando(true)
 
     try {
-      const total = carrito.reduce((s, i) => s + i.producto.precio * i.cantidad, 0)
+      const grupos: { destino: TipoDestino; items: ItemCarrito[] }[] = []
+      if (itemsCafeteria.length > 0) grupos.push({ destino: 'cafeteria', items: itemsCafeteria })
+      if (itemsCocina.length > 0)    grupos.push({ destino: 'cocina',    items: itemsCocina })
 
-      const { data: orden, error: ordenError } = await supabase
-        .from('ordenes')
-        .insert({ mesa_id: mesaId, estado: 'pendiente', total })
-        .select()
-        .single()
+      for (const grupo of grupos) {
+        const total = grupo.items.reduce((s, i) => s + i.producto.precio * i.cantidad, 0)
 
-      if (ordenError || !orden) throw ordenError
+        const { data: orden, error } = await supabase
+          .from('ordenes')
+          .insert({ mesa_id: mesaId, estado: 'pendiente', destino: grupo.destino, total })
+          .select()
+          .single()
 
-      const items = carrito.map((i) => ({
-        orden_id: orden.id,
-        producto_id: i.producto.id,
-        cantidad: i.cantidad,
-        precio_unitario: i.producto.precio,
-        notas: i.notas || null,
-      }))
+        if (error || !orden) throw error
 
-      const { error: itemsError } = await supabase.from('orden_items').insert(items)
-      if (itemsError) throw itemsError
+        await supabase.from('orden_items').insert(
+          grupo.items.map(i => ({
+            orden_id: orden.id,
+            producto_id: i.producto.id,
+            cantidad: i.cantidad,
+            precio_unitario: i.producto.precio,
+            notas: i.notas || null,
+          }))
+        )
+      }
 
       await supabase.from('mesas').update({ estado: 'ocupada' }).eq('id', mesaId)
-
+      setMesa(m => m ? { ...m, estado: 'ocupada' } : m)
       setCarrito([])
-      mostrarToast('✅ Orden enviada a cocina')
+
+      // Refrescar órdenes activas
+      const { data } = await supabase.from('ordenes').select('*, orden_items(*, productos(nombre))').eq('mesa_id', mesaId).in('estado', ['pendiente', 'en_preparacion', 'listo']).order('created_at')
+      if (data) setOrdenesActivas(data)
+
+      const destinos = grupos.map(g => g.destino === 'cafeteria' ? 'Cafetería' : 'Cocina').join(' y ')
+      mostrarToast(`Orden enviada a ${destinos}`)
     } catch {
-      mostrarToast('❌ Error al enviar la orden')
+      mostrarToast('Error al enviar la orden', false)
     } finally {
       setEnviando(false)
     }
   }
 
-  const estadoLabel = mesa?.estado === 'libre' ? 'Libre' : mesa?.estado === 'ocupada' ? 'Ocupada' : 'Por pagar'
-  const estadoStyle =
-    mesa?.estado === 'libre'
-      ? { background: '#E8F5E9', color: '#2E7D32', border: '1px solid #A5D6A7' }
-      : mesa?.estado === 'ocupada'
-      ? { background: '#FEF3E2', color: 'var(--brown)', border: '1px solid var(--gold)' }
-      : { background: '#FFEBEE', color: '#C62828', border: '1px solid #EF9A9A' }
+  async function cerrarMesa() {
+    if (!mesa) return
+    setCerrando(true)
+    await supabase.from('mesas').update({ estado: 'por_pagar' }).eq('id', mesaId)
+    setMesa(m => m ? { ...m, estado: 'por_pagar' } : m)
+    mostrarToast('Mesa marcada — llevar la cuenta')
+    setCerrando(false)
+  }
 
+  async function liberarMesa() {
+    if (!mesa) return
+    setCerrando(true)
+    await supabase.from('mesas').update({ estado: 'libre' }).eq('id', mesaId)
+    setMesa(m => m ? { ...m, estado: 'libre' } : m)
+    mostrarToast('Mesa liberada')
+    setCerrando(false)
+    router.push('/')
+  }
+
+  // ── Loading ──────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen" style={{ background: 'var(--bg-cream)' }}>
+      <div className="flex items-center justify-center h-screen" style={{ background: '#1C0A00' }}>
         <div className="text-center">
-          <svg className="animate-spin mx-auto mb-3" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.5" strokeLinecap="round">
+          <svg className="animate-spin mx-auto mb-3" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="1.5" strokeLinecap="round">
             <path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
           </svg>
-          <p style={{ color: 'var(--text-muted)' }}>Cargando menú...</p>
+          <p style={{ color: '#C9A96E' }}>Cargando menú...</p>
         </div>
       </div>
     )
@@ -154,74 +180,99 @@ export default function MesaPage() {
 
   if (!mesa) {
     return (
-      <div className="flex items-center justify-center h-screen" style={{ background: 'var(--bg-cream)' }}>
-        <div className="text-center">
-          <p className="mb-4" style={{ color: 'var(--text-muted)' }}>Mesa no encontrada</p>
-          <button onClick={() => router.push('/')} className="font-medium cursor-pointer" style={{ color: 'var(--gold)' }}>
-            Volver al inicio
-          </button>
-        </div>
+      <div className="flex items-center justify-center h-screen" style={{ background: '#1C0A00' }}>
+        <button onClick={() => router.push('/')} style={{ color: '#C9A96E' }}>Volver al inicio</button>
       </div>
     )
   }
 
+  const estadoBadge =
+    mesa.estado === 'libre'    ? { bg: '#DCFCE7', color: '#15803D', label: 'Libre' } :
+    mesa.estado === 'ocupada'  ? { bg: '#FEF3E2', color: '#92400E', label: 'Ocupada' } :
+                                 { bg: '#FEE2E2', color: '#B91C1C', label: 'Por pagar' }
+
   return (
-    <div className="flex flex-col h-screen" style={{ background: 'var(--bg-cream)' }}>
-      {/* Header */}
-      <header
-        className="px-4 py-3 flex items-center justify-between flex-shrink-0"
-        style={{ background: 'var(--espresso)', borderBottom: '1px solid var(--gold)' }}
-      >
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push('/')}
-            className="flex items-center justify-center w-9 h-9 rounded-full cursor-pointer transition-all duration-200 min-h-[44px] min-w-[44px]"
-            style={{ color: 'var(--gold)' }}
-            aria-label="Volver"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M19 12H5M12 5l-7 7 7 7"/>
-            </svg>
-          </button>
-          <div>
-            <h1 className="font-serif font-semibold" style={{ color: '#FEF8F0' }}>Mesa {mesa.numero}</h1>
-            <p className="text-xs" style={{ color: 'var(--gold)' }}>{mesa.capacidad} personas</p>
+    <div className="flex flex-col h-screen" style={{ background: '#F5EDE0' }}>
+
+      {/* ── Header ─────────────────────────────────────────── */}
+      <header className="flex-shrink-0" style={{ background: '#1C0A00', borderBottom: '2px solid #C9A96E' }}>
+        {/* Top bar */}
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push('/')}
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full cursor-pointer"
+              style={{ color: '#C9A96E' }}
+              aria-label="Volver"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M19 12H5M12 5l-7 7 7 7"/>
+              </svg>
+            </button>
+            <div>
+              <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.25rem', fontWeight: 700, color: '#FEF8F0', lineHeight: 1.1 }}>
+                Mesa {mesa.numero}
+              </h1>
+              <p style={{ color: '#C9A96E', fontSize: '0.7rem', letterSpacing: '0.08em' }}>
+                {mesa.capacidad} personas
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Botón cobrar (ocupada → por_pagar) */}
+            {mesa.estado === 'ocupada' && (
+              <button
+                onClick={cerrarMesa}
+                disabled={cerrando}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all duration-200 min-h-[44px]"
+                style={{ background: 'rgba(239,68,68,0.15)', color: '#FCA5A5', border: '1px solid rgba(239,68,68,0.3)' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                Cobrar
+              </button>
+            )}
+            {/* Botón liberar (por_pagar → libre) */}
+            {mesa.estado === 'por_pagar' && (
+              <button
+                onClick={liberarMesa}
+                disabled={cerrando}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all duration-200 min-h-[44px]"
+                style={{ background: 'rgba(34,197,94,0.15)', color: '#86EFAC', border: '1px solid rgba(34,197,94,0.3)' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Liberar
+              </button>
+            )}
+            <span className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: estadoBadge.bg, color: estadoBadge.color }}>
+              {estadoBadge.label}
+            </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold px-3 py-1 rounded-full" style={estadoStyle}>
-            {estadoLabel}
-          </span>
-          {mesa.estado === 'ocupada' && (
-            <button
-              onClick={solicitarCuenta}
-              className="text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer transition-all duration-200 hover:opacity-90"
-              style={{ background: '#16A34A', color: '#F0FDF4' }}
-            >
-              Cobrar
-            </button>
-          )}
-          {mesa.estado === 'por_pagar' && (
-            <button
-              onClick={liberarMesa}
-              className="text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer transition-all duration-200 hover:opacity-90"
-              style={{ background: '#22C55E', color: '#052e16' }}
-            >
-              Pagada ✓
-            </button>
-          )}
-        </div>
+
+        {/* Banner órdenes activas */}
+        <ActiveOrdersBanner ordenes={ordenesActivas} />
+
+        {/* Section selector */}
+        <SectionSelector
+          seccion={seccion}
+          onCambiar={cambiarSeccion}
+          countCafeteria={itemsCafeteria.reduce((s, i) => s + i.cantidad, 0)}
+          countCocina={itemsCocina.reduce((s, i) => s + i.cantidad, 0)}
+        />
       </header>
 
-      <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, var(--gold), transparent)' }} />
-
-      {/* Body */}
+      {/* ── Body ───────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Menu section */}
+
+        {/* Menu */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="px-4 pt-4 pb-2 flex-shrink-0">
+          <div className="px-4 pt-3 pb-2 flex-shrink-0" style={{ background: '#F5EDE0' }}>
             <CategoryFilter
-              categorias={categorias}
+              categorias={categoriasFiltradas}
               categoriaActiva={categoriaActiva}
               onChange={setCategoriaActiva}
             />
@@ -236,19 +287,16 @@ export default function MesaPage() {
         </div>
 
         {/* Order panel */}
-        <div
-          className="w-80 flex flex-col flex-shrink-0"
-          style={{ background: 'var(--bg-card)', borderLeft: '1px solid var(--border)' }}
-        >
-          <div
-            className="px-4 py-3 flex items-center gap-2 flex-shrink-0"
-            style={{ borderBottom: '1px solid var(--border)' }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round">
-              <circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/>
-              <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
-            </svg>
-            <h2 className="font-serif font-semibold" style={{ color: 'var(--espresso)' }}>Orden actual</h2>
+        <div className="w-72 flex flex-col flex-shrink-0" style={{ background: '#FFFFFF', borderLeft: '1px solid #E8D5BB' }}>
+          <div className="px-4 py-3 flex-shrink-0 flex items-center justify-between" style={{ borderBottom: '1px solid #E8D5BB' }}>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, color: '#1C0A00', fontSize: '1rem' }}>
+              Orden actual
+            </h2>
+            {carrito.length > 0 && (
+              <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: '#C9A96E', color: '#1C0A00' }}>
+                {carrito.reduce((s, i) => s + i.cantidad, 0)}
+              </span>
+            )}
           </div>
           <div className="flex-1 min-h-0">
             <OrderSummary
@@ -264,13 +312,21 @@ export default function MesaPage() {
         </div>
       </div>
 
-      {/* Toast */}
+      {/* ── Toast ──────────────────────────────────────────── */}
       {toast && (
         <div
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full text-sm font-semibold shadow-xl z-50"
-          style={{ background: 'var(--espresso)', color: '#FEF8F0', border: '1px solid var(--gold)' }}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full text-sm font-semibold shadow-xl z-50 flex items-center gap-2"
+          style={{
+            background: toast.ok ? '#1C0A00' : '#7F1D1D',
+            color: '#FEF8F0',
+            border: `1px solid ${toast.ok ? '#C9A96E' : '#EF4444'}`,
+          }}
         >
-          {toast}
+          {toast.ok
+            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          }
+          {toast.msg}
         </div>
       )}
     </div>

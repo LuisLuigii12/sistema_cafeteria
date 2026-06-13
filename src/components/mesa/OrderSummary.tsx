@@ -24,6 +24,7 @@ export default function OrderSummary({
   onLimpiar,
 }: Props) {
   const [notaEditando, setNotaEditando] = useState<string | null>(null)
+  const [confirmando, setConfirmando] = useState(false)
 
   const total = carrito.reduce((sum, item) => sum + item.producto.precio * item.cantidad, 0)
   const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0)
@@ -193,32 +194,54 @@ export default function OrderSummary({
             ${total.toFixed(2)}
           </span>
         </div>
-        <button
-          onClick={onEnviar}
-          disabled={enviando}
-          className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.99]"
-          style={{
-            background: enviando ? 'var(--border)' : 'var(--espresso)',
-            color: enviando ? 'var(--text-muted)' : '#FEF8F0',
-            boxShadow: enviando ? 'none' : 'var(--shadow-md)',
-          }}
-        >
-          {enviando ? (
-            <>
-              <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-              </svg>
-              Enviando...
-            </>
-          ) : (
-            <>
-              Enviar a Cocina · Mesa {mesaNumero}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </>
-          )}
-        </button>
+        {confirmando && !enviando ? (
+          <div className="space-y-2">
+            <p className="text-xs text-center font-medium" style={{ color: 'var(--text-muted)' }}>¿Confirmar envío?</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setConfirmando(false)}
+                className="py-3 rounded-xl text-sm font-semibold cursor-pointer transition-colors"
+                style={{ background: 'var(--bg-card-soft)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { setConfirmando(false); onEnviar() }}
+                className="py-3 rounded-xl text-sm font-bold cursor-pointer transition-all hover:brightness-110 active:scale-[0.99]"
+                style={{ background: 'var(--espresso)', color: '#FEF8F0', boxShadow: 'var(--shadow-md)' }}
+              >
+                Sí, enviar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmando(true)}
+            disabled={enviando}
+            className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.99]"
+            style={{
+              background: enviando ? 'var(--border)' : 'var(--espresso)',
+              color: enviando ? 'var(--text-muted)' : '#FEF8F0',
+              boxShadow: enviando ? 'none' : 'var(--shadow-md)',
+            }}
+          >
+            {enviando ? (
+              <>
+                <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                </svg>
+                Enviando...
+              </>
+            ) : (
+              <>
+                Enviar orden · Mesa {mesaNumero}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   )

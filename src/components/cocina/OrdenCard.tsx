@@ -6,7 +6,7 @@ import type { Orden, EstadoOrden } from '@/types'
 
 interface Props {
   orden: Orden
-  ahora: Date
+  ahora?: Date
 }
 
 const ESTADO_SIGUIENTE: Partial<Record<EstadoOrden, EstadoOrden>> = {
@@ -33,7 +33,7 @@ function urgenciaColor(mins: number) {
   return { color: '#EF4444', bg: 'rgba(239,68,68,0.15)', label: `${formatTiempo(mins)} ⚠` }
 }
 
-export default function OrdenCard({ orden, ahora }: Props) {
+export default function OrdenCard({ orden, ahora = new Date() }: Props) {
   const [cargando, setCargando] = useState(false)
   const siguienteEstado = ESTADO_SIGUIENTE[orden.estado]
   const mins = calcMinutos(orden.created_at, ahora)
@@ -45,15 +45,19 @@ export default function OrdenCard({ orden, ahora }: Props) {
     try {
       await supabase.from('ordenes').update({ estado: siguienteEstado }).eq('id', orden.id)
 
-      if (siguienteEstado === 'entregado') {
-        const { count } = await supabase
+      if (siguienteEstado === 'entregado' && orden.mesa_id) {
+        // Si no quedan órdenes activas para esta mesa, liberarla (a menos que ya esté por_pagar)
+        const { data: pendientes } = await supabase
           .from('ordenes')
-          .select('*', { count: 'exact', head: true })
+          .select('id')
           .eq('mesa_id', orden.mesa_id)
           .in('estado', ['pendiente', 'en_preparacion', 'listo'])
-
-        if (count === 0) {
-          await supabase.from('mesas').update({ estado: 'por_pagar' }).eq('id', orden.mesa_id)
+          .neq('id', orden.id)
+        if (!pendientes || pendientes.length === 0) {
+          const { data: mesa } = await supabase.from('mesas').select('estado').eq('id', orden.mesa_id).single()
+          if (mesa && mesa.estado !== 'por_pagar') {
+            await supabase.from('mesas').update({ estado: 'libre' }).eq('id', orden.mesa_id)
+          }
         }
       }
     } finally {
