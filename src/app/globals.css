@@ -74,20 +74,42 @@ button, a {
   font-family: 'Playfair Display', serif;
 }
 
-/* ── Scrollbar ──────────────────────────────── */
-.scrollbar-thin::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+/* ── Scrollbar (elegante y consistente en toda la app) ── */
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201, 169, 110, 0.45) transparent;
 }
-.scrollbar-thin::-webkit-scrollbar-track {
+/* WebKit / Chrome / Edge / Safari */
+*::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+*::-webkit-scrollbar-track {
   background: transparent;
 }
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(201,169,110,0.5);
-  border-radius: 3px;
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(201, 169, 110, 0.5);
+  border-radius: 999px;
+  border: 3px solid transparent;   /* margen transparente → efecto flotante */
+  background-clip: padding-box;
+  transition: background-color 0.2s;
 }
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(201,169,110,0.8);
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(201, 169, 110, 0.85);
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Variante extra-delgada para paneles angostos (orden, columnas cocina) */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
 }
 
 /* ── Motion ─────────────────────────────────── */
