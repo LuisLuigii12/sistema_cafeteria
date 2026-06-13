@@ -24,10 +24,21 @@
   touch-action: manipulation;
 }
 
-body {
+html, body {
   background: var(--bg-cream);
   color: var(--text-dark);
   font-family: 'Inter', sans-serif;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  /* safe area para tablets con notch */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Evita selección de texto accidental en taps */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .font-serif {
