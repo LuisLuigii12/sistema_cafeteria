@@ -13,6 +13,14 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    // Regla experimental del React Compiler: marca como error el patrón
+    // estándar de "fetch en useEffect → setState" (que aquí es async y no
+    // dispara renders en cascada). La dejamos como aviso, no error.
+    rules: {
+      "react-hooks/set-state-in-effect": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

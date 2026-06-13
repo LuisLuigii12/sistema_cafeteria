@@ -11,6 +11,22 @@ export default function CocinaPage() {
   const [loading, setLoading] = useState(true)
   const [ahora, setAhora] = useState(new Date())
 
+  async function fetchOrdenes() {
+    const { data } = await supabase
+      .from('ordenes')
+      .select(`
+        *,
+        mesas(numero),
+        orden_items(*, productos(nombre))
+      `)
+      .eq('destino', 'cocina')
+      .in('estado', ['pendiente', 'en_preparacion', 'listo'])
+      .order('created_at', { ascending: true })
+
+    if (data) setOrdenes(data)
+    setLoading(false)
+  }
+
   useEffect(() => {
     fetchOrdenes()
 
@@ -35,22 +51,6 @@ export default function CocinaPage() {
       clearInterval(interval)
     }
   }, [])
-
-  async function fetchOrdenes() {
-    const { data } = await supabase
-      .from('ordenes')
-      .select(`
-        *,
-        mesas(numero),
-        orden_items(*, productos(nombre))
-      `)
-      .eq('destino', 'cocina')
-      .in('estado', ['pendiente', 'en_preparacion', 'listo'])
-      .order('created_at', { ascending: true })
-
-    if (data) setOrdenes(data)
-    setLoading(false)
-  }
 
   const pendientes = ordenes.filter((o) => o.estado === 'pendiente')
   const enPreparacion = ordenes.filter((o) => o.estado === 'en_preparacion')

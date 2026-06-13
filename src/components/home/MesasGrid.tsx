@@ -20,16 +20,6 @@ export default function MesasGrid() {
   const [editando, setEditando] = useState<Mesa | null>(null)
   const [creando, setCreando] = useState(false)
 
-  useEffect(() => {
-    fetchTodo()
-    const channel = supabase
-      .channel('mesas-home')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'mesas' }, fetchTodo)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ordenes' }, fetchTodo)
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [])
-
   async function fetchTodo() {
     const [{ data: mesasData }, { data: ordenesData }] = await Promise.all([
       supabase.from('mesas').select('*').order('numero'),
@@ -43,6 +33,16 @@ export default function MesasGrid() {
     }
     setLoading(false)
   }
+
+  useEffect(() => {
+    fetchTodo()
+    const channel = supabase
+      .channel('mesas-home')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mesas' }, fetchTodo)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ordenes' }, fetchTodo)
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   function cerrarModal() {
     setEditando(null)

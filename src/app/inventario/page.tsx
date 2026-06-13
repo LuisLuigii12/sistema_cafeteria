@@ -18,6 +18,15 @@ export default function InventarioPage() {
   const [editando, setEditando] = useState<Producto | null>(null)
   const [creando, setCreando] = useState(false)
 
+  async function fetchProductos() {
+    const { data } = await supabase
+      .from('productos')
+      .select('*, categorias(nombre)')
+      .order('nombre')
+    if (data) setProductos(data)
+    setLoading(false)
+  }
+
   useEffect(() => {
     fetchProductos()
     supabase.from('categorias').select('*').order('orden').then(({ data }) => { if (data) setCategorias(data) })
@@ -27,15 +36,6 @@ export default function InventarioPage() {
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [])
-
-  async function fetchProductos() {
-    const { data } = await supabase
-      .from('productos')
-      .select('*, categorias(nombre)')
-      .order('nombre')
-    if (data) setProductos(data)
-    setLoading(false)
-  }
 
   const stats = useMemo(() => {
     const valor = productos.reduce((s, p) => s + p.costo * p.stock, 0)

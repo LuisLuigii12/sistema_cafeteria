@@ -23,16 +23,6 @@ export default function FinanzasPage() {
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(false)
 
-  useEffect(() => {
-    fetchTodo()
-    const channel = supabase
-      .channel('finanzas')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ordenes' }, fetchTodo)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'gastos' }, fetchTodo)
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [])
-
   async function fetchTodo() {
     const [ordRes, gasRes] = await Promise.all([
       supabase
@@ -46,6 +36,16 @@ export default function FinanzasPage() {
     if (gasRes.data) setGastos(gasRes.data as Gasto[])
     setLoading(false)
   }
+
+  useEffect(() => {
+    fetchTodo()
+    const channel = supabase
+      .channel('finanzas')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ordenes' }, fetchTodo)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'gastos' }, fetchTodo)
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   const desde = useMemo(() => {
     const d = new Date()
