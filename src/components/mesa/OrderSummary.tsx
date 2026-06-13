@@ -24,7 +24,6 @@ export default function OrderSummary({
   onLimpiar,
 }: Props) {
   const [notaEditando, setNotaEditando] = useState<string | null>(null)
-  const [confirmando, setConfirmando] = useState(false)
 
   const total = carrito.reduce((sum, item) => sum + item.producto.precio * item.cantidad, 0)
   const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0)
@@ -93,10 +92,10 @@ export default function OrderSummary({
               </p>
             </div>
 
-            <div className="flex items-center justify-between mt-2.5">
-              {/* Compact stepper */}
+            {/* Stepper */}
+            <div className="mt-2.5">
               <div
-                className="flex items-center rounded-full overflow-hidden"
+                className="inline-flex items-center rounded-full overflow-hidden"
                 style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}
               >
                 <button
@@ -119,65 +118,56 @@ export default function OrderSummary({
                   +
                 </button>
               </div>
-              <button
-                onClick={() => setNotaEditando(notaEditando === item.producto.id ? null : item.producto.id)}
-                className="flex items-center gap-1 text-xs font-medium cursor-pointer transition-colors duration-200 px-2 py-1.5 rounded-lg hover:bg-[var(--gold-soft)]"
-                style={{ color: 'var(--brown)' }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-                </svg>
-                {item.notas ? 'Editar' : 'Nota'}
-              </button>
             </div>
 
-            {notaEditando === item.producto.id && (
-              <div className="mt-2.5 space-y-2">
-                <div className="flex flex-wrap gap-1.5">
-                  {notasRapidas(item.producto).map((chip) => {
-                    const activo = notaActiva(item.notas, chip)
-                    return (
-                      <button
-                        key={chip}
-                        onClick={() => onActualizarNota(item.producto.id, alternarNota(item.notas, chip))}
-                        className="px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all active:scale-95"
-                        style={activo
-                          ? { background: 'var(--gold)', color: 'var(--espresso)' }
-                          : { background: 'var(--bg-card)', color: 'var(--brown)', border: '1px solid var(--border)' }}
-                      >
-                        {chip}
-                      </button>
-                    )
-                  })}
-                </div>
-                <input
-                  type="text"
-                  placeholder="Otra indicación..."
-                  value={item.notas}
-                  onChange={(e) => onActualizarNota(item.producto.id, e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') setNotaEditando(null) }}
-                  className="w-full text-xs rounded-lg px-3 py-2 outline-none transition-shadow focus:ring-2"
-                  style={{ border: '1px solid var(--gold)', background: 'var(--bg-card)', color: 'var(--espresso)' }}
-                />
-                <button
-                  onClick={() => setNotaEditando(null)}
-                  className="text-xs font-semibold cursor-pointer"
-                  style={{ color: 'var(--brown)' }}
-                >
-                  Listo
-                </button>
+            {/* Chips de indicaciones — siempre visibles y grandes */}
+            {notasRapidas(item.producto).length > 0 && (
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {notasRapidas(item.producto).map((chip) => {
+                  const activo = notaActiva(item.notas, chip)
+                  return (
+                    <button
+                      key={chip}
+                      onClick={() => onActualizarNota(item.producto.id, alternarNota(item.notas, chip))}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all active:scale-95"
+                      style={activo
+                        ? { background: 'var(--gold)', color: 'var(--espresso)', boxShadow: 'var(--shadow-sm)' }
+                        : { background: 'var(--bg-card)', color: 'var(--brown)', border: '1px solid var(--border)' }}
+                    >
+                      {activo && (
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      )}
+                      {chip}
+                    </button>
+                  )
+                })}
               </div>
             )}
-            {item.notas && notaEditando !== item.producto.id && (
-              <div
-                className="mt-2 flex items-start gap-1.5 text-xs rounded-lg px-2.5 py-1.5"
-                style={{ color: 'var(--brown)', background: 'var(--gold-soft)' }}
+
+            {/* Indicación personalizada (opcional) */}
+            {notaEditando === item.producto.id ? (
+              <input
+                autoFocus
+                type="text"
+                placeholder="Escribe otra indicación..."
+                value={item.notas}
+                onChange={(e) => onActualizarNota(item.producto.id, e.target.value)}
+                onBlur={() => setNotaEditando(null)}
+                onKeyDown={(e) => { if (e.key === 'Enter') setNotaEditando(null) }}
+                className="mt-2 w-full text-xs rounded-lg px-3 py-2 outline-none transition-shadow focus:ring-2"
+                style={{ border: '1px solid var(--gold)', background: 'var(--bg-card)', color: 'var(--espresso)' }}
+              />
+            ) : (
+              <button
+                onClick={() => setNotaEditando(item.producto.id)}
+                className="mt-2 flex items-center gap-1 text-xs font-medium cursor-pointer transition-colors hover:underline"
+                style={{ color: 'var(--brown)' }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="mt-0.5 flex-shrink-0">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
                 </svg>
-                <span className="leading-snug">{item.notas}</span>
-              </div>
+                {item.notas ? 'Editar indicación' : 'Otra indicación'}
+              </button>
             )}
           </div>
         ))}
@@ -194,54 +184,32 @@ export default function OrderSummary({
             ${total.toFixed(2)}
           </span>
         </div>
-        {confirmando && !enviando ? (
-          <div className="space-y-2">
-            <p className="text-xs text-center font-medium" style={{ color: 'var(--text-muted)' }}>¿Confirmar envío?</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setConfirmando(false)}
-                className="py-3 rounded-xl text-sm font-semibold cursor-pointer transition-colors"
-                style={{ background: 'var(--bg-card-soft)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => { setConfirmando(false); onEnviar() }}
-                className="py-3 rounded-xl text-sm font-bold cursor-pointer transition-all hover:brightness-110 active:scale-[0.99]"
-                style={{ background: 'var(--espresso)', color: '#FEF8F0', boxShadow: 'var(--shadow-md)' }}
-              >
-                Sí, enviar
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => setConfirmando(true)}
-            disabled={enviando}
-            className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.99]"
-            style={{
-              background: enviando ? 'var(--border)' : 'var(--espresso)',
-              color: enviando ? 'var(--text-muted)' : '#FEF8F0',
-              boxShadow: enviando ? 'none' : 'var(--shadow-md)',
-            }}
-          >
-            {enviando ? (
-              <>
-                <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                </svg>
-                Enviando...
-              </>
-            ) : (
-              <>
-                Enviar orden · Mesa {mesaNumero}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </>
-            )}
-          </button>
-        )}
+        <button
+          onClick={onEnviar}
+          disabled={enviando}
+          className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.99]"
+          style={{
+            background: enviando ? 'var(--border)' : 'var(--espresso)',
+            color: enviando ? 'var(--text-muted)' : '#FEF8F0',
+            boxShadow: enviando ? 'none' : 'var(--shadow-md)',
+          }}
+        >
+          {enviando ? (
+            <>
+              <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+              Enviando...
+            </>
+          ) : (
+            <>
+              Enviar orden · Mesa {mesaNumero}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </>
+          )}
+        </button>
       </div>
     </div>
   )

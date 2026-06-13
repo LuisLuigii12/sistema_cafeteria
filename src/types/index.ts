@@ -32,6 +32,18 @@ export interface Producto {
   producto_opciones?: ProductoOpcion[]
 }
 
+export type UnidadInsumo = 'kg' | 'g' | 'L' | 'ml' | 'pz'
+
+export interface Insumo {
+  id: string
+  nombre: string
+  unidad: string
+  stock: number
+  stock_minimo: number
+  costo: number
+  created_at: string
+}
+
 export type CategoriaGasto = 'renta' | 'sueldos' | 'servicios' | 'insumos' | 'mantenimiento' | 'general'
 
 export interface Gasto {

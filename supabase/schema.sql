@@ -42,6 +42,17 @@ CREATE TABLE producto_opciones (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Insumos / ingredientes (no se venden directo; se usan para preparar)
+CREATE TABLE insumos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nombre TEXT NOT NULL,
+  unidad TEXT NOT NULL DEFAULT 'pz',
+  stock NUMERIC(10,2) NOT NULL DEFAULT 0,
+  stock_minimo NUMERIC(10,2) NOT NULL DEFAULT 0,
+  costo NUMERIC(10,2) NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Mesas de la cafeteria
 CREATE TABLE mesas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

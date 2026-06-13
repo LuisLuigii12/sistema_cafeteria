@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import OrdenCard from '@/components/cocina/OrdenCard'
 import type { Orden } from '@/types'
@@ -55,6 +56,16 @@ export default function CafeteriaPage() {
       <header style={{ background: '#1C0A00', borderBottom: '2px solid #C9A96E' }}>
         <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200 hover:bg-white/10 flex-shrink-0"
+              style={{ color: '#C9A96E' }}
+              aria-label="Volver al inicio"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M19 12H5M12 5l-7 7 7 7"/>
+              </svg>
+            </Link>
             <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#C9A96E' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1C0A00" strokeWidth="2" strokeLinecap="round">
                 <path d="M17 8h1a4 4 0 0 1 0 8h-1"/>
