@@ -3,7 +3,7 @@ import TopNav from '@/components/shared/TopNav'
 
 export default function Home() {
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-cream)' }}>
+    <div className="h-full overflow-y-auto scrollbar-thin" style={{ background: 'var(--bg-cream)' }}>
       <TopNav />
 
       <main className="p-4 sm:p-6 max-w-7xl mx-auto">
