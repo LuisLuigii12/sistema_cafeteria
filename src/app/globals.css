@@ -1,15 +1,43 @@
 @import "tailwindcss";
 
 :root {
-  --bg-cream:    #FEF8F0;
-  --bg-card:     #FFFFFF;
-  --espresso:    #2C1004;
-  --brown:       #78350F;
-  --gold:        #C9A96E;
-  --gold-bright: #D4A853;
-  --border:      #E8D5BB;
-  --text-dark:   #1C0A00;
-  --text-muted:  #78350F;
+  /* ── Surfaces ─────────────────────────────── */
+  --bg-cream:     #F5EDE0;   /* page background (unified) */
+  --bg-card:      #FFFFFF;
+  --bg-card-soft: #FFFBF5;   /* subtle warm card */
+  --bg-dark:      #100500;   /* darkest surface (cocina) */
+
+  /* ── Coffee scale (single source of truth) ── */
+  --espresso:     #1C0A00;   /* primary dark / headers (unified) */
+  --coffee:       #2C1407;
+  --brown:        #78350F;
+
+  /* ── Gold accent ───────────────────────────── */
+  --gold:         #C9A96E;
+  --gold-bright:  #D4A853;
+  --gold-soft:    #FEF3E2;
+
+  /* ── Lines & text ──────────────────────────── */
+  --border:       #E8D5BB;
+  --border-soft:  #F0E3D0;
+  --text-dark:    #1C0A00;
+  --text-muted:   #8A6646;   /* warm secondary text */
+
+  /* ── State colors ──────────────────────────── */
+  --green:        #16A34A;
+  --green-bright: #22C55E;
+  --green-soft:   #DCFCE7;
+  --green-text:   #15803D;
+  --amber:        #F59E0B;
+  --red:          #EF4444;
+  --red-soft:     #FEE2E2;
+  --red-text:     #B91C1C;
+  --blue:         #2563EB;
+
+  /* ── Elevation ─────────────────────────────── */
+  --shadow-sm:    0 1px 3px rgba(28,10,0,0.08);
+  --shadow-md:    0 2px 10px rgba(28,10,0,0.10);
+  --shadow-lg:    0 12px 28px -8px rgba(28,10,0,0.22);
 }
 
 @theme inline {
@@ -28,19 +56,58 @@ body {
   background: var(--bg-cream);
   color: var(--text-dark);
   font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 .font-serif {
   font-family: 'Playfair Display', serif;
 }
 
+/* ── Scrollbar ──────────────────────────────── */
 .scrollbar-thin::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
+  height: 5px;
 }
 .scrollbar-thin::-webkit-scrollbar-track {
-  background: #F5EDE0;
+  background: transparent;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #C9A96E;
-  border-radius: 2px;
+  background: rgba(201,169,110,0.5);
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(201,169,110,0.8);
+}
+
+/* ── Motion ─────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+/* Entrance — pair with inline animation-delay for stagger */
+.animate-in {
+  animation: fadeInUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-scale {
+  animation: scaleIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.pulse-dot {
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

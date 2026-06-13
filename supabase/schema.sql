@@ -16,9 +16,29 @@ CREATE TABLE productos (
   nombre TEXT NOT NULL,
   descripcion TEXT,
   precio DECIMAL(10,2) NOT NULL,
+  costo DECIMAL(10,2) NOT NULL DEFAULT 0,
+  stock INTEGER NOT NULL DEFAULT 0,
+  stock_minimo INTEGER NOT NULL DEFAULT 5,
   categoria_id UUID NOT NULL REFERENCES categorias(id),
   disponible BOOLEAN NOT NULL DEFAULT true,
   imagen_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Gastos operativos (egresos que no son costo de producto)
+CREATE TABLE gastos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  concepto TEXT NOT NULL,
+  monto DECIMAL(10,2) NOT NULL,
+  categoria TEXT NOT NULL DEFAULT 'general',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Opciones rápidas por producto (ej. Café → "Sin azúcar")
+CREATE TABLE producto_opciones (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  producto_id UUID NOT NULL REFERENCES productos(id) ON DELETE CASCADE,
+  texto TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

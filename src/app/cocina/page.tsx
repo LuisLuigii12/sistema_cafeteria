@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import OrdenCard from '@/components/cocina/OrdenCard'
 import type { Orden } from '@/types'
@@ -27,7 +28,7 @@ export default function CocinaPage() {
       )
       .subscribe()
 
-    const interval = setInterval(() => setAhora(new Date()), 30000)
+    const interval = setInterval(() => setAhora(new Date()), 10000)
 
     return () => {
       supabase.removeChannel(channel)
@@ -61,14 +62,24 @@ export default function CocinaPage() {
   ]
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#100500' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-dark)' }}>
       {/* Header */}
-      <header style={{ background: '#1C0A00', borderBottom: '2px solid #C9A96E' }}>
+      <header className="sticky top-0 z-30" style={{ background: 'var(--espresso)', borderBottom: '2px solid var(--gold)' }}>
         {/* Top bar */}
         <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#C9A96E' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1C0A00" strokeWidth="2" strokeLinecap="round">
+            <Link
+              href="/"
+              className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200 hover:bg-white/10 flex-shrink-0"
+              style={{ color: 'var(--gold)' }}
+              aria-label="Volver al inicio"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M19 12H5M12 5l-7 7 7 7"/>
+              </svg>
+            </Link>
+            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'var(--gold)' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--espresso)" strokeWidth="2" strokeLinecap="round">
                 <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/>
                 <line x1="6" y1="17" x2="18" y2="17"/>
               </svg>
@@ -166,7 +177,7 @@ export default function CocinaPage() {
               >
                 <div className="space-y-4">
                   {col.ordenes.map((orden) => (
-                    <OrdenCard key={orden.id} orden={orden} />
+                    <OrdenCard key={orden.id} orden={orden} ahora={ahora} />
                   ))}
                   {col.ordenes.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16 gap-2">

@@ -24,15 +24,22 @@ export default function MesaPage() {
 
   useEffect(() => {
     async function cargarDatos() {
-      const [{ data: mesaData }, { data: catData }, { data: prodData }] = await Promise.all([
+      const [{ data: mesaData }, { data: catData }, { data: prodData }, opcRes] = await Promise.all([
         supabase.from('mesas').select('*').eq('id', mesaId).single(),
         supabase.from('categorias').select('*').order('orden'),
         supabase.from('productos').select('*, categorias(*)').eq('disponible', true).order('nombre'),
+        supabase.from('producto_opciones').select('*'),
       ])
 
       if (mesaData) setMesa(mesaData)
       if (catData) setCategorias(catData)
-      if (prodData) setProductos(prodData)
+      if (prodData) {
+        const opciones = opcRes.data ?? []
+        setProductos(prodData.map((p) => ({
+          ...p,
+          producto_opciones: opciones.filter((o) => o.producto_id === p.id),
+        })))
+      }
       setLoading(false)
     }
 
@@ -75,6 +82,17 @@ export default function MesaPage() {
       prev.map((i) => (i.producto.id === productoId ? { ...i, notas: nota } : i))
     )
   }, [])
+
+  async function solicitarCuenta() {
+    await supabase.from('mesas').update({ estado: 'por_pagar' }).eq('id', mesaId)
+    setMesa((prev) => prev ? { ...prev, estado: 'por_pagar' } : null)
+    mostrarToast('Cuenta solicitada')
+  }
+
+  async function liberarMesa() {
+    await supabase.from('mesas').update({ estado: 'libre' }).eq('id', mesaId)
+    router.push('/')
+  }
 
   async function enviarOrden() {
     if (carrito.length === 0 || !mesa) return
@@ -170,9 +188,29 @@ export default function MesaPage() {
             <p className="text-xs" style={{ color: 'var(--gold)' }}>{mesa.capacidad} personas</p>
           </div>
         </div>
-        <span className="text-xs font-semibold px-3 py-1 rounded-full" style={estadoStyle}>
-          {estadoLabel}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold px-3 py-1 rounded-full" style={estadoStyle}>
+            {estadoLabel}
+          </span>
+          {mesa.estado === 'ocupada' && (
+            <button
+              onClick={solicitarCuenta}
+              className="text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer transition-all duration-200 hover:opacity-90"
+              style={{ background: '#16A34A', color: '#F0FDF4' }}
+            >
+              Cobrar
+            </button>
+          )}
+          {mesa.estado === 'por_pagar' && (
+            <button
+              onClick={liberarMesa}
+              className="text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer transition-all duration-200 hover:opacity-90"
+              style={{ background: '#22C55E', color: '#052e16' }}
+            >
+              Pagada ✓
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, var(--gold), transparent)' }} />
@@ -199,24 +237,30 @@ export default function MesaPage() {
 
         {/* Order panel */}
         <div
-          className="w-72 flex flex-col flex-shrink-0"
-          style={{ background: '#FFFFFF', borderLeft: '1px solid var(--border)' }}
+          className="w-80 flex flex-col flex-shrink-0"
+          style={{ background: 'var(--bg-card)', borderLeft: '1px solid var(--border)' }}
         >
           <div
-            className="px-4 py-3 flex-shrink-0"
+            className="px-4 py-3 flex items-center gap-2 flex-shrink-0"
             style={{ borderBottom: '1px solid var(--border)' }}
           >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round">
+              <circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/>
+              <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+            </svg>
             <h2 className="font-serif font-semibold" style={{ color: 'var(--espresso)' }}>Orden actual</h2>
           </div>
-          <OrderSummary
-            carrito={carrito}
-            mesaNumero={mesa.numero}
-            enviando={enviando}
-            onActualizar={actualizarCantidad}
-            onActualizarNota={actualizarNota}
-            onEnviar={enviarOrden}
-            onLimpiar={() => setCarrito([])}
-          />
+          <div className="flex-1 min-h-0">
+            <OrderSummary
+              carrito={carrito}
+              mesaNumero={mesa.numero}
+              enviando={enviando}
+              onActualizar={actualizarCantidad}
+              onActualizarNota={actualizarNota}
+              onEnviar={enviarOrden}
+              onLimpiar={() => setCarrito([])}
+            />
+          </div>
         </div>
       </div>
 

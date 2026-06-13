@@ -1,3 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
+import { temaCategoria, CategoriaIcon } from '@/components/shared/categoria'
+import { formatMoney } from '@/lib/format'
 import type { Producto, ItemCarrito } from '@/types'
 
 interface Props {
@@ -13,10 +16,10 @@ export default function MenuGrid({ productos, carrito, onAgregar }: Props) {
 
   if (productos.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64" style={{ color: 'var(--gold)' }}>
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="mb-2 opacity-50">
-          <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/>
-          <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+      <div className="flex flex-col items-center justify-center h-64 gap-2" style={{ color: 'var(--gold)' }}>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="opacity-50">
+          <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /><path d="M7 2v20" />
+          <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
         </svg>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Sin productos en esta categoría</p>
       </div>
@@ -24,49 +27,80 @@ export default function MenuGrid({ productos, carrito, onAgregar }: Props) {
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-      {productos.map((producto) => {
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+      {productos.map((producto, i) => {
         const cantidad = cantidadEnCarrito(producto.id)
         const noDisponible = !producto.disponible
         const enCarrito = cantidad > 0
+        const tema = temaCategoria(producto.categorias?.nombre)
 
         return (
           <button
             key={producto.id}
             disabled={noDisponible}
             onClick={() => onAgregar(producto)}
-            className="relative text-left p-4 rounded-2xl transition-all duration-200 cursor-pointer min-h-[44px]"
-            style={
-              noDisponible
-                ? { background: '#F0EBE5', border: '2px solid var(--border)', opacity: 0.5, cursor: 'not-allowed' }
-                : enCarrito
-                ? { background: '#FEF3E2', border: '2px solid var(--gold)', boxShadow: '0 2px 8px rgba(201,169,110,0.25)' }
-                : { background: '#FFFFFF', border: '2px solid var(--border)' }
-            }
+            className="group relative text-left rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer flex flex-col animate-in disabled:cursor-not-allowed enabled:hover:-translate-y-1 enabled:active:translate-y-0"
+            style={{
+              animationDelay: `${Math.min(i * 25, 250)}ms`,
+              background: 'var(--bg-card)',
+              border: enCarrito ? '2px solid var(--gold)' : '2px solid transparent',
+              boxShadow: enCarrito ? '0 8px 22px rgba(201,169,110,0.32)' : 'var(--shadow-md)',
+              opacity: noDisponible ? 0.55 : 1,
+            }}
           >
-            {enCarrito && (
-              <span
-                className="absolute top-2 right-2 w-6 h-6 text-xs font-bold rounded-full flex items-center justify-center"
-                style={{ background: 'var(--gold)', color: 'var(--espresso)' }}
-              >
-                {cantidad}
-              </span>
-            )}
+            {/* Imagen / placeholder */}
+            <div className="relative aspect-[4/3] w-full overflow-hidden" style={{ background: tema.soft }}>
+              {producto.imagen_url ? (
+                <img
+                  src={producto.imagen_url}
+                  alt={producto.nombre}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
+                  style={{ color: tema.color, background: `linear-gradient(135deg, ${tema.soft}, ${tema.color}22)` }}
+                >
+                  <CategoriaIcon categoria={producto.categorias?.nombre} size={48} />
+                </div>
+              )}
 
-            <p className="font-semibold text-sm leading-tight pr-6" style={{ color: 'var(--espresso)' }}>
-              {producto.nombre}
-            </p>
-            {producto.descripcion && (
-              <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--text-muted)' }}>
-                {producto.descripcion}
-              </p>
-            )}
-            <p className="mt-2 text-base font-bold" style={{ color: enCarrito ? 'var(--brown)' : 'var(--espresso)' }}>
-              ${producto.precio.toFixed(2)}
-            </p>
-            {noDisponible && (
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>No disponible</span>
-            )}
+              {/* Quantity badge */}
+              {enCarrito && (
+                <span
+                  className="absolute top-2 left-2 min-w-7 h-7 px-2 rounded-full flex items-center justify-center text-sm font-bold tabular-nums animate-scale"
+                  style={{ background: 'var(--gold)', color: 'var(--espresso)', boxShadow: 'var(--shadow-md)' }}
+                >
+                  {cantidad}
+                </span>
+              )}
+
+              {noDisponible && (
+                <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(28,10,0,0.35)' }}>
+                  <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: 'var(--espresso)', color: '#FEF8F0' }}>Agotado</span>
+                </div>
+              )}
+            </div>
+
+            {/* Info */}
+            <div className="p-3 flex flex-col flex-1">
+              <p className="font-semibold text-sm leading-tight" style={{ color: 'var(--espresso)' }}>{producto.nombre}</p>
+              {producto.descripcion && (
+                <p className="text-xs mt-0.5 line-clamp-1" style={{ color: 'var(--text-muted)' }}>{producto.descripcion}</p>
+              )}
+              <div className="flex items-center justify-between mt-3">
+                <p className="text-base font-bold tabular-nums" style={{ color: 'var(--espresso)' }}>{formatMoney(producto.precio)}</p>
+                {!noDisponible && (
+                  <span
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 group-hover:scale-110 group-active:scale-95"
+                    style={{ background: enCarrito ? 'var(--gold)' : 'var(--espresso)', color: enCarrito ? 'var(--espresso)' : '#FEF8F0' }}
+                    aria-hidden
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                  </span>
+                )}
+              </div>
+            </div>
           </button>
         )
       })}

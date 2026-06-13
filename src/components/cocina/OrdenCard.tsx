@@ -6,34 +6,59 @@ import type { Orden, EstadoOrden } from '@/types'
 
 interface Props {
   orden: Orden
+  ahora: Date
 }
 
 const ESTADO_SIGUIENTE: Partial<Record<EstadoOrden, EstadoOrden>> = {
   pendiente: 'en_preparacion',
   en_preparacion: 'listo',
+  listo: 'entregado',
 }
 
-function useMinutos(fechaStr: string) {
-  return Math.floor((Date.now() - new Date(fechaStr).getTime()) / 60000)
+function calcMinutos(fechaStr: string, ahora: Date) {
+  return Math.max(0, Math.floor((ahora.getTime() - new Date(fechaStr).getTime()) / 60000))
+}
+
+function formatTiempo(mins: number) {
+  if (mins < 1) return '< 1 min'
+  if (mins < 60) return `${mins} min`
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return m === 0 ? `${h} h` : `${h} h ${m} m`
 }
 
 function urgenciaColor(mins: number) {
-  if (mins < 5) return { color: '#22C55E', bg: 'rgba(34,197,94,0.15)', label: `${mins < 1 ? '< 1' : mins} min` }
-  if (mins < 10) return { color: '#F59E0B', bg: 'rgba(245,158,11,0.15)', label: `${mins} min` }
-  return { color: '#EF4444', bg: 'rgba(239,68,68,0.15)', label: `${mins} min ⚠` }
+  if (mins < 5) return { color: '#22C55E', bg: 'rgba(34,197,94,0.15)', label: formatTiempo(mins) }
+  if (mins < 10) return { color: '#F59E0B', bg: 'rgba(245,158,11,0.15)', label: formatTiempo(mins) }
+  return { color: '#EF4444', bg: 'rgba(239,68,68,0.15)', label: `${formatTiempo(mins)} ⚠` }
 }
 
-export default function OrdenCard({ orden }: Props) {
+export default function OrdenCard({ orden, ahora }: Props) {
   const [cargando, setCargando] = useState(false)
   const siguienteEstado = ESTADO_SIGUIENTE[orden.estado]
-  const mins = useMinutos(orden.created_at)
+  const mins = calcMinutos(orden.created_at, ahora)
   const urgencia = urgenciaColor(mins)
 
   async function avanzarEstado() {
     if (!siguienteEstado) return
     setCargando(true)
-    await supabase.from('ordenes').update({ estado: siguienteEstado }).eq('id', orden.id)
-    setCargando(false)
+    try {
+      await supabase.from('ordenes').update({ estado: siguienteEstado }).eq('id', orden.id)
+
+      if (siguienteEstado === 'entregado') {
+        const { count } = await supabase
+          .from('ordenes')
+          .select('*', { count: 'exact', head: true })
+          .eq('mesa_id', orden.mesa_id)
+          .in('estado', ['pendiente', 'en_preparacion', 'listo'])
+
+        if (count === 0) {
+          await supabase.from('mesas').update({ estado: 'por_pagar' }).eq('id', orden.mesa_id)
+        }
+      }
+    } finally {
+      setCargando(false)
+    }
   }
 
   const totalItems = orden.orden_items?.reduce((s, i) => s + i.cantidad, 0) ?? 0
@@ -44,7 +69,7 @@ export default function OrdenCard({ orden }: Props) {
 
   return (
     <div
-      className="rounded-2xl overflow-hidden flex flex-col"
+      className="rounded-2xl overflow-hidden flex flex-col animate-scale"
       style={{
         background: '#1E0C02',
         border: `2px solid ${accentColor}`,
@@ -108,7 +133,7 @@ export default function OrdenCard({ orden }: Props) {
         </ul>
 
         {/* Action button */}
-        {siguienteEstado ? (
+        {siguienteEstado && (
           <button
             onClick={avanzarEstado}
             disabled={cargando}
@@ -116,22 +141,19 @@ export default function OrdenCard({ orden }: Props) {
             style={
               siguienteEstado === 'en_preparacion'
                 ? { background: '#C9A96E', color: '#1C0A00' }
-                : { background: '#16A34A', color: '#F0FDF4' }
+                : siguienteEstado === 'listo'
+                ? { background: '#16A34A', color: '#F0FDF4' }
+                : { background: '#2563EB', color: '#EFF6FF' }
             }
           >
             {cargando
               ? 'Actualizando...'
               : siguienteEstado === 'en_preparacion'
               ? 'Iniciar preparación'
-              : '✓ Marcar listo'}
+              : siguienteEstado === 'listo'
+              ? '✓ Marcar listo'
+              : '↑ Entregar a mesa'}
           </button>
-        ) : (
-          <div
-            className="w-full py-3 rounded-xl text-sm font-bold text-center mt-1"
-            style={{ background: 'rgba(34,197,94,0.15)', color: '#22C55E' }}
-          >
-            ✓ Listo para servir
-          </div>
         )}
       </div>
     </div>
