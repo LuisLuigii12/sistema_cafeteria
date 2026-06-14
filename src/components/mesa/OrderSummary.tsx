@@ -72,80 +72,59 @@ export default function OrderSummary({
       </div>
 
       {/* Scrollable items — min-h-0 lets this region shrink so the footer stays pinned */}
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin p-3 space-y-2.5">
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin p-2.5 space-y-2">
         {carrito.map((item, i) => (
           <div
             key={item.producto.id}
-            className="rounded-xl p-3 animate-in"
+            className="rounded-xl p-2.5 animate-in"
             style={{
               background: 'var(--bg-card-soft)',
               border: '1px solid var(--border)',
               animationDelay: `${Math.min(i * 30, 200)}ms`,
             }}
           >
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-sm font-semibold flex-1 leading-tight" style={{ color: 'var(--espresso)' }}>
-                {item.producto.nombre}
-              </p>
-              <p className="text-sm font-bold whitespace-nowrap" style={{ color: 'var(--espresso)' }}>
-                ${(item.producto.precio * item.cantidad).toFixed(2)}
-              </p>
+            {/* Línea 1: stepper + nombre + precio (compacto, tipo caja) */}
+            <div className="flex items-center gap-2">
+              <div className="inline-flex items-center rounded-lg overflow-hidden flex-shrink-0" style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+                <button onClick={() => onActualizar(item.producto.id, item.cantidad - 1)} className="w-8 h-8 flex items-center justify-center text-lg leading-none cursor-pointer transition-colors hover:bg-[var(--gold-soft)]" style={{ color: 'var(--espresso)' }} aria-label="Quitar uno">−</button>
+                <span className="w-6 text-center text-sm font-bold tabular-nums" style={{ color: 'var(--espresso)' }}>{item.cantidad}</span>
+                <button onClick={() => onActualizar(item.producto.id, item.cantidad + 1)} className="w-8 h-8 flex items-center justify-center text-lg leading-none cursor-pointer transition-colors hover:bg-[var(--gold-soft)]" style={{ color: 'var(--espresso)' }} aria-label="Agregar uno">+</button>
+              </div>
+              <p className="flex-1 text-sm font-bold leading-tight" style={{ color: 'var(--espresso)' }}>{item.producto.nombre}</p>
+              <p className="text-sm font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--espresso)' }}>${(item.producto.precio * item.cantidad).toFixed(2)}</p>
             </div>
 
-            {/* Stepper */}
-            <div className="mt-2.5">
-              <div
-                className="inline-flex items-center rounded-full overflow-hidden"
-                style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}
-              >
+            {/* Línea 2: chips compactos + "otra" */}
+            <div className="flex flex-wrap gap-1 mt-2">
+              {notasRapidas(item.producto).map((chip) => {
+                const activo = notaActiva(item.notas, chip)
+                return (
+                  <button
+                    key={chip}
+                    onClick={() => onActualizarNota(item.producto.id, alternarNota(item.notas, chip))}
+                    className="flex items-center gap-0.5 px-2 py-1 rounded-full text-[0.72rem] font-semibold cursor-pointer transition-all active:scale-95"
+                    style={activo
+                      ? { background: 'var(--gold)', color: 'var(--espresso)' }
+                      : { background: 'var(--bg-card)', color: 'var(--brown)', border: '1px solid var(--border)' }}
+                  >
+                    {activo && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                    {chip}
+                  </button>
+                )
+              })}
+              {notaEditando !== item.producto.id && (
                 <button
-                  onClick={() => onActualizar(item.producto.id, item.cantidad - 1)}
-                  className="w-9 h-9 flex items-center justify-center text-lg leading-none cursor-pointer transition-colors hover:bg-[var(--gold-soft)]"
-                  style={{ color: 'var(--espresso)' }}
-                  aria-label="Quitar uno"
+                  onClick={() => setNotaEditando(item.producto.id)}
+                  className="flex items-center gap-0.5 px-2 py-1 rounded-full text-[0.72rem] font-medium cursor-pointer"
+                  style={{ color: 'var(--brown)', border: '1px dashed var(--gold)' }}
                 >
-                  −
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                  otra
                 </button>
-                <span className="w-7 text-center text-sm font-bold tabular-nums" style={{ color: 'var(--espresso)' }}>
-                  {item.cantidad}
-                </span>
-                <button
-                  onClick={() => onActualizar(item.producto.id, item.cantidad + 1)}
-                  className="w-9 h-9 flex items-center justify-center text-lg leading-none cursor-pointer transition-colors hover:bg-[var(--gold-soft)]"
-                  style={{ color: 'var(--espresso)' }}
-                  aria-label="Agregar uno"
-                >
-                  +
-                </button>
-              </div>
+              )}
             </div>
 
-            {/* Chips de indicaciones — siempre visibles y grandes */}
-            {notasRapidas(item.producto).length > 0 && (
-              <div className="mt-2.5 flex flex-wrap gap-1.5">
-                {notasRapidas(item.producto).map((chip) => {
-                  const activo = notaActiva(item.notas, chip)
-                  return (
-                    <button
-                      key={chip}
-                      onClick={() => onActualizarNota(item.producto.id, alternarNota(item.notas, chip))}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all active:scale-95"
-                      style={activo
-                        ? { background: 'var(--gold)', color: 'var(--espresso)', boxShadow: 'var(--shadow-sm)' }
-                        : { background: 'var(--bg-card)', color: 'var(--brown)', border: '1px solid var(--border)' }}
-                    >
-                      {activo && (
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      )}
-                      {chip}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* Indicación personalizada (opcional) */}
-            {notaEditando === item.producto.id ? (
+            {notaEditando === item.producto.id && (
               <input
                 autoFocus
                 type="text"
@@ -157,17 +136,6 @@ export default function OrderSummary({
                 className="mt-2 w-full text-xs rounded-lg px-3 py-2 outline-none transition-shadow focus:ring-2"
                 style={{ border: '1px solid var(--gold)', background: 'var(--bg-card)', color: 'var(--espresso)' }}
               />
-            ) : (
-              <button
-                onClick={() => setNotaEditando(item.producto.id)}
-                className="mt-2 flex items-center gap-1 text-xs font-medium cursor-pointer transition-colors hover:underline"
-                style={{ color: 'var(--brown)' }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-                </svg>
-                {item.notas ? 'Editar indicación' : 'Otra indicación'}
-              </button>
             )}
           </div>
         ))}
