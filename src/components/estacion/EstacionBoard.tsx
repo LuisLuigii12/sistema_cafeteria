@@ -27,7 +27,7 @@ function urgencia(mins: number) {
   return '#EF4444'
 }
 
-type RecetaSel = { nombre: string; ingredientes: string | null; preparacion: string | null }
+type RecetaSel = { nombre: string; ingredientes: string | null }
 
 export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
   const [ordenes, setOrdenes] = useState<Orden[]>([])
@@ -210,7 +210,7 @@ export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
                     <ul className="space-y-2 flex-1">
                       {orden.orden_items?.map((item) => {
                         const rec = recetas[item.producto_id]
-                        const tieneReceta = !!(rec?.ingredientes || rec?.preparacion)
+                        const tieneReceta = !!rec?.ingredientes
                         return (
                           <li key={item.id} className="flex items-start gap-2.5">
                             <span className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold" style={{ background: `${color}22`, color }}>{item.cantidad}</span>
@@ -220,7 +220,7 @@ export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
                             </div>
                             {tieneReceta && (
                               <button
-                                onClick={() => setReceta({ nombre: item.productos!.nombre, ingredientes: rec?.ingredientes ?? null, preparacion: rec?.preparacion ?? null })}
+                                onClick={() => setReceta({ nombre: item.productos!.nombre, ingredientes: rec?.ingredientes ?? null })}
                                 className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors hover:bg-white/10"
                                 style={{ color: 'var(--gold)', border: '1px solid rgba(201,169,110,0.3)' }}
                                 aria-label="Cómo se prepara"
@@ -260,7 +260,7 @@ export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
       )}
 
       {receta && (
-        <RecetaModal nombre={receta.nombre} ingredientes={receta.ingredientes} preparacion={receta.preparacion} onCerrar={() => setReceta(null)} />
+        <RecetaModal nombre={receta.nombre} ingredientes={receta.ingredientes} onCerrar={() => setReceta(null)} />
       )}
     </div>
   )
