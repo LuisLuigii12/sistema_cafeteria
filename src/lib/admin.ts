@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from 'react'
 
-// ⚠️ PIN de acceso a Administración. Cámbialo por el que quiera el dueño.
-// Nota: es una protección sencilla del lado del cliente (evita que el personal
-// entre por accidente). Para seguridad real se necesita login con Supabase Auth.
-export const ADMIN_PIN = '1234'
-
+// Estado de "modo administración" (sin PIN). Se activa al entrar al área de
+// Administración y se apaga con "Salir". Sirve para mostrar/ocultar controles
+// de administración (ej. "Administrar mesas") en las pantallas de operación.
 const KEY = 'admin_unlocked'
 const EVENT = 'admin-change'
 
