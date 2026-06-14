@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatMoney } from '@/lib/format'
-import type { Orden, TicketItem, MetodoPago } from '@/types'
+import type { Orden, TicketItem } from '@/types'
 
 interface Props {
   mesaId: string
@@ -12,16 +12,9 @@ interface Props {
   onCerrar: () => void
 }
 
-const METODOS: { value: MetodoPago; label: string; icon: React.ReactNode }[] = [
-  { value: 'efectivo', label: 'Efectivo', icon: <><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="2" /><path d="M6 12h.01M18 12h.01" /></> },
-  { value: 'tarjeta', label: 'Tarjeta', icon: <><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></> },
-  { value: 'transferencia', label: 'Transferencia', icon: <><path d="M3 7h18M3 7l4-4M3 7l4 4" /><path d="M21 17H3M21 17l-4-4M21 17l-4 4" /></> },
-]
-
 export default function CobrarModal({ mesaId, mesaNumero, onCobrado, onCerrar }: Props) {
   const [ordenes, setOrdenes] = useState<Orden[]>([])
   const [loading, setLoading] = useState(true)
-  const [metodo, setMetodo] = useState<MetodoPago>('efectivo')
   const [procesando, setProcesando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -63,7 +56,6 @@ export default function CobrarModal({ mesaId, mesaNumero, onCobrado, onCerrar }:
     const { error: tErr } = await supabase.from('tickets').insert({
       mesa_numero: mesaNumero,
       total: cuenta.total,
-      metodo_pago: metodo,
       items: cuenta.items,
     })
     if (tErr) {
@@ -120,20 +112,6 @@ export default function CobrarModal({ mesaId, mesaNumero, onCobrado, onCerrar }:
               <div className="flex items-center justify-between pt-3" style={{ borderTop: '2px dashed var(--border)' }}>
                 <span className="font-bold" style={{ color: 'var(--espresso)' }}>Total</span>
                 <span className="font-serif text-3xl font-bold tabular-nums" style={{ color: 'var(--espresso)' }}>{formatMoney(cuenta.total)}</span>
-              </div>
-
-              {/* Método de pago */}
-              <div className="mt-5">
-                <label className="text-xs font-semibold uppercase tracking-wide block mb-2" style={{ color: 'var(--text-muted)' }}>Método de pago</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {METODOS.map((m) => (
-                    <button key={m.value} onClick={() => setMetodo(m.value)} className="flex flex-col items-center gap-1.5 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-all"
-                      style={metodo === m.value ? { background: 'var(--espresso)', color: '#FEF8F0' } : { background: 'var(--bg-card-soft)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{m.icon}</svg>
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
               </div>
             </>
           )}

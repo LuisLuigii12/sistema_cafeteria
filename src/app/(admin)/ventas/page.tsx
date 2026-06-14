@@ -4,13 +4,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import TopNav from '@/components/shared/TopNav'
 import { formatMoney, formatMoneyShort } from '@/lib/format'
-import type { Ticket, MetodoPago } from '@/types'
+import type { Ticket } from '@/types'
 
 type Periodo = 'hoy' | '7d' | '30d' | 'todo'
 const PERIODOS: { value: Periodo; label: string }[] = [
   { value: 'hoy', label: 'Hoy' }, { value: '7d', label: '7 días' }, { value: '30d', label: '30 días' }, { value: 'todo', label: 'Todo' },
 ]
-const METODO_LABEL: Record<MetodoPago, string> = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' }
 
 export default function VentasPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
@@ -99,7 +98,7 @@ export default function VentasPage() {
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm" style={{ color: 'var(--espresso)' }}>
-                    {t.mesa_numero ? `Mesa ${t.mesa_numero}` : 'Venta'} · {METODO_LABEL[t.metodo_pago] ?? t.metodo_pago}
+                    {t.mesa_numero ? `Mesa ${t.mesa_numero}` : 'Venta'}
                   </p>
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                     {new Date(t.created_at).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {(t.items ?? []).reduce((s, it) => s + it.cantidad, 0)} productos
@@ -134,7 +133,7 @@ export default function VentasPage() {
                 <span className="font-bold" style={{ color: 'var(--espresso)' }}>Total</span>
                 <span className="font-serif text-2xl font-bold tabular-nums" style={{ color: 'var(--espresso)' }}>{formatMoney(Number(detalle.total))}</span>
               </div>
-              <p className="text-xs text-center pt-1" style={{ color: 'var(--text-muted)' }}>Pagado con {METODO_LABEL[detalle.metodo_pago] ?? detalle.metodo_pago}</p>
+              <p className="text-xs text-center pt-1" style={{ color: 'var(--text-muted)' }}>Pagado ✓</p>
             </div>
             <div className="p-5 pt-0">
               <button onClick={() => setDetalle(null)} className="w-full py-3 rounded-xl font-semibold text-sm cursor-pointer" style={{ background: 'var(--espresso)', color: '#FEF8F0' }}>Cerrar</button>
