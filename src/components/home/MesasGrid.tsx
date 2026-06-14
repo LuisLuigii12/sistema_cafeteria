@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import MesaModal from '@/components/home/MesaModal'
+import CobrarModal from '@/components/mesa/CobrarModal'
 import type { Mesa, EstadoMesa } from '@/types'
 
 const ESTADO: Record<EstadoMesa, { label: string; accent: string; badge: string; badgeText: string; hint: string }> = {
@@ -13,11 +14,13 @@ const ESTADO: Record<EstadoMesa, { label: string; accent: string; badge: string;
 }
 
 export default function MesasGrid() {
+  const router = useRouter()
   const [mesas, setMesas] = useState<Mesa[]>([])
   const [ordenesActivas, setOrdenesActivas] = useState<Record<string, number>>({})
   const [listosPorMesa, setListosPorMesa] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [admin, setAdmin] = useState(false)
+  const [cobrando, setCobrando] = useState<Mesa | null>(null)
   const [editando, setEditando] = useState<Mesa | null>(null)
   const [creando, setCreando] = useState(false)
 
@@ -82,24 +85,32 @@ export default function MesasGrid() {
     { label: 'Por cobrar',  count: porPagar, color: '#EF4444' },
   ]
 
-  function CardInterior({ mesa }: { mesa: Mesa }) {
+  function Tarjeta({ mesa }: { mesa: Mesa }) {
     const e = ESTADO[mesa.estado]
+    const listo = !admin && (listosPorMesa[mesa.id] ?? 0) > 0
+    const activas = !admin && (ordenesActivas[mesa.id] ?? 0) > 0
+    const mostrarCobrar = !admin && mesa.estado !== 'libre'
+
     return (
       <div
-        className="group relative h-44 rounded-2xl cursor-pointer transition-all duration-200 hover:-translate-y-1 overflow-hidden"
+        className="relative h-44 rounded-2xl overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-1"
         style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow-md)' }}
       >
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: e.accent }} />
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: e.accent, zIndex: 1 }} />
         <span
           aria-hidden
-          className="absolute pointer-events-none select-none transition-transform duration-300 group-hover:scale-105"
+          className="absolute pointer-events-none select-none"
           style={{ right: -8, bottom: -28, fontFamily: "'Playfair Display', serif", fontSize: '8rem', fontWeight: 700, lineHeight: 1, color: e.accent, opacity: 0.06 }}
         >
           {mesa.numero}
         </span>
 
-        <div className="relative p-5 flex flex-col h-full">
-          <div className="flex items-start justify-between">
+        {/* Cuerpo: toca para ordenar (o editar en modo admin) */}
+        <div
+          onClick={() => (admin ? setEditando(mesa) : router.push(`/mesa/${mesa.id}`))}
+          className="relative flex-1 p-5 flex flex-col cursor-pointer"
+        >
+          <div className="flex items-start justify-between gap-2">
             <div className="flex items-baseline gap-1.5">
               <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>Mesa</span>
               <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '2.5rem', fontWeight: 700, color: 'var(--espresso)', lineHeight: 1 }}>
@@ -107,13 +118,17 @@ export default function MesasGrid() {
               </span>
             </div>
             {admin ? (
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5" style={{ background: 'var(--gold-soft)', color: 'var(--brown)' }}>
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 flex-shrink-0" style={{ background: 'var(--gold-soft)', color: 'var(--brown)' }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
                 Editar
               </span>
+            ) : listo ? (
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 pulse-dot flex-shrink-0" style={{ background: 'var(--green-soft)', color: 'var(--green-text)', border: '1px solid #86EFAC' }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                Listo
+              </span>
             ) : (
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5" style={{ background: e.badge, color: e.badgeText }}>
-                {mesa.estado === 'por_pagar' && <span className="w-1.5 h-1.5 rounded-full pulse-dot" style={{ background: e.badgeText }} />}
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 flex-shrink-0" style={{ background: e.badge, color: e.badgeText }}>
                 {e.label}
               </span>
             )}
@@ -121,33 +136,24 @@ export default function MesasGrid() {
 
           <div className="flex-1" />
 
-          <div>
-            <p className="text-xs font-medium mb-2" style={{ color: admin ? 'var(--brown)' : e.badgeText }}>
-              {admin ? 'Toca para editar' : e.hint}
-            </p>
-            <div className="flex items-center justify-end min-h-[24px]">
-              {!admin && (listosPorMesa[mesa.id] ?? 0) > 0 ? (
-                <span
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold pulse-dot"
-                  style={{ background: 'var(--green-soft)', color: 'var(--green-text)', border: '1px solid #86EFAC' }}
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
-                  Listo para recoger
-                </span>
-              ) : !admin && (ordenesActivas[mesa.id] ?? 0) > 0 ? (
-                <span
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
-                  style={{ background: 'var(--gold-soft)', color: 'var(--brown)', border: '1px solid var(--gold)' }}
-                >
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" />
-                  </svg>
-                  {ordenesActivas[mesa.id]} en preparación
-                </span>
-              ) : null}
-            </div>
-          </div>
+          <p className="text-xs font-medium" style={{ color: admin ? 'var(--brown)' : e.badgeText }}>
+            {admin ? 'Toca para editar' : listo ? 'Listo para recoger' : activas ? `${ordenesActivas[mesa.id]} en preparación` : e.hint}
+          </p>
         </div>
+
+        {/* Cobrar — un toque, sin entrar al menú */}
+        {mostrarCobrar && (
+          <button
+            onClick={() => setCobrando(mesa)}
+            className="flex items-center justify-center gap-1.5 py-2.5 text-sm font-bold cursor-pointer transition-all hover:brightness-110 active:scale-[0.99] flex-shrink-0"
+            style={{ background: '#16A34A', color: '#F0FDF4' }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+            Cobrar
+          </button>
+        )}
       </div>
     )
   }
@@ -193,15 +199,7 @@ export default function MesasGrid() {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {mesas.map((mesa, i) => (
           <div key={mesa.id} className="animate-in" style={{ animationDelay: `${Math.min(i * 40, 320)}ms` }}>
-            {admin ? (
-              <button onClick={() => setEditando(mesa)} className="w-full text-left cursor-pointer">
-                <CardInterior mesa={mesa} />
-              </button>
-            ) : (
-              <Link href={`/mesa/${mesa.id}`}>
-                <CardInterior mesa={mesa} />
-              </Link>
-            )}
+            <Tarjeta mesa={mesa} />
           </div>
         ))}
 
@@ -226,6 +224,15 @@ export default function MesasGrid() {
           sugerenciaNumero={siguienteNumero}
           onGuardar={cerrarModal}
           onCerrar={() => { setEditando(null); setCreando(false) }}
+        />
+      )}
+
+      {cobrando && (
+        <CobrarModal
+          mesaId={cobrando.id}
+          mesaNumero={cobrando.numero}
+          onCobrado={() => { setCobrando(null); fetchTodo() }}
+          onCerrar={() => setCobrando(null)}
         />
       )}
     </>
