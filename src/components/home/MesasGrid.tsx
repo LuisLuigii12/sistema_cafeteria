@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useAdmin } from '@/lib/admin'
 import MesaModal from '@/components/home/MesaModal'
 import CobrarModal from '@/components/mesa/CobrarModal'
 import type { Mesa, EstadoMesa } from '@/types'
@@ -15,6 +16,7 @@ const ESTADO: Record<EstadoMesa, { label: string; accent: string; badge: string;
 
 export default function MesasGrid() {
   const router = useRouter()
+  const adminUnlocked = useAdmin()
   const [mesas, setMesas] = useState<Mesa[]>([])
   const [ordenesActivas, setOrdenesActivas] = useState<Record<string, number>>({})
   const [listosPorMesa, setListosPorMesa] = useState<Record<string, number>>({})
@@ -179,8 +181,9 @@ export default function MesasGrid() {
         ))}
       </div>
 
-      {/* Toolbar */}
-      <div className="flex items-center justify-end mb-4">
+      {/* Toolbar (solo dueño / admin desbloqueado) */}
+      <div className="flex items-center justify-end mb-4" style={{ minHeight: adminUnlocked ? undefined : 0 }}>
+        {adminUnlocked && (
         <button
           onClick={() => setAdmin((a) => !a)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all"
@@ -193,6 +196,7 @@ export default function MesasGrid() {
           </svg>
           {admin ? 'Listo' : 'Administrar mesas'}
         </button>
+        )}
       </div>
 
       {/* Mesa grid */}
