@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import Splash from '@/components/shared/Splash'
+import ServiceWorkerRegister from '@/components/shared/ServiceWorkerRegister'
 
 export const metadata: Metadata = {
   title: "Valeria's Coffee",
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icon-512.png" />
       </head>
       <body className="h-full antialiased font-sans overflow-hidden">
+        <ServiceWorkerRegister />
         <Splash />
         {children}
       </body>
