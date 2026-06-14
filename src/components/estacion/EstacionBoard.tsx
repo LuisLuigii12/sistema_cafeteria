@@ -37,6 +37,7 @@ export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
   const [flash, setFlash] = useState(false)
   const [receta, setReceta] = useState<RecetaSel | null>(null)
   const [deshacer, setDeshacer] = useState<{ id: string; mesa?: number } | null>(null)
+  const [recetas, setRecetas] = useState<Record<string, { ingredientes: string | null; preparacion: string | null }>>({})
   const prevIds = useRef<Set<string> | null>(null)
   const audioRef = useRef<AudioContext | null>(null)
   const sonidoRef = useRef(false)
@@ -66,10 +67,22 @@ export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
     beep()
   }
 
+  async function fetchRecetas() {
+    // Resiliente: si las columnas de receta aún no existen (migración 004
+    // pendiente), simplemente no se muestran las recetas y la estación sigue.
+    const { data, error } = await supabase.from('productos').select('id, ingredientes, preparacion')
+    if (error || !data) return
+    const map: Record<string, { ingredientes: string | null; preparacion: string | null }> = {}
+    data.forEach((p: { id: string; ingredientes: string | null; preparacion: string | null }) => {
+      map[p.id] = { ingredientes: p.ingredientes ?? null, preparacion: p.preparacion ?? null }
+    })
+    setRecetas(map)
+  }
+
   async function fetchOrdenes() {
     const { data } = await supabase
       .from('ordenes')
-      .select('*, mesas(numero), orden_items(*, productos(nombre, ingredientes, preparacion))')
+      .select('*, mesas(numero), orden_items(*, productos(nombre))')
       .eq('destino', destino)
       .in('estado', ['pendiente', 'en_preparacion'])
       .order('created_at', { ascending: true })
@@ -86,6 +99,7 @@ export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
 
   useEffect(() => {
     fetchOrdenes()
+    fetchRecetas()
     const channel = supabase
       .channel(`estacion-${destino}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ordenes' }, fetchOrdenes)
@@ -195,7 +209,8 @@ export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
                     {/* Items */}
                     <ul className="space-y-2 flex-1">
                       {orden.orden_items?.map((item) => {
-                        const tieneReceta = !!(item.productos?.ingredientes || item.productos?.preparacion)
+                        const rec = recetas[item.producto_id]
+                        const tieneReceta = !!(rec?.ingredientes || rec?.preparacion)
                         return (
                           <li key={item.id} className="flex items-start gap-2.5">
                             <span className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold" style={{ background: `${color}22`, color }}>{item.cantidad}</span>
@@ -205,7 +220,7 @@ export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
                             </div>
                             {tieneReceta && (
                               <button
-                                onClick={() => setReceta({ nombre: item.productos!.nombre, ingredientes: item.productos!.ingredientes ?? null, preparacion: item.productos!.preparacion ?? null })}
+                                onClick={() => setReceta({ nombre: item.productos!.nombre, ingredientes: rec?.ingredientes ?? null, preparacion: rec?.preparacion ?? null })}
                                 className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors hover:bg-white/10"
                                 style={{ color: 'var(--gold)', border: '1px solid rgba(201,169,110,0.3)' }}
                                 aria-label="Cómo se prepara"
