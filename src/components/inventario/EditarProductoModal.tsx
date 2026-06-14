@@ -25,6 +25,8 @@ export default function EditarProductoModal({ producto, onGuardar, onCerrar }: P
   const [costo, setCosto] = useState(String(producto.costo))
   const [disponible, setDisponible] = useState(producto.disponible)
   const [ingredientes, setIngredientes] = useState(producto.ingredientes ?? '')
+  const [imagenUrl, setImagenUrl] = useState(producto.imagen_url ?? '')
+  const [subiendoImagen, setSubiendoImagen] = useState(false)
   const [opciones, setOpciones] = useState<ProductoOpcion[]>([])
   const [nuevaOpcion, setNuevaOpcion] = useState('')
 
@@ -67,6 +69,28 @@ export default function EditarProductoModal({ producto, onGuardar, onCerrar }: P
     setStock((prev) => String(Math.max(0, num(prev) + n)))
   }
 
+  async function subirImagen(file: File) {
+    setSubiendoImagen(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${producto.id}.${ext}`
+      const { error } = await supabase.storage
+        .from('productos')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (error) throw error
+      const { data } = supabase.storage.from('productos').getPublicUrl(path)
+      // Añadir cache-buster para que se refresque la imagen
+      const url = `${data.publicUrl}?t=${Date.now()}`
+      setImagenUrl(url)
+      await supabase.from('productos').update({ imagen_url: url }).eq('id', producto.id)
+    } catch (e) {
+      alert('Error al subir imagen. Verifica que el bucket "productos" existe en Supabase Storage.')
+      console.error(e)
+    } finally {
+      setSubiendoImagen(false)
+    }
+  }
+
   function guardar() {
     onGuardar(producto.id, {
       stock: Math.max(0, Math.round(num(stock))),
@@ -75,6 +99,7 @@ export default function EditarProductoModal({ producto, onGuardar, onCerrar }: P
       costo: Math.max(0, costoN),
       disponible,
       ingredientes: ingredientes.trim() || null,
+      imagen_url: imagenUrl || null,
     })
   }
 
@@ -104,6 +129,48 @@ export default function EditarProductoModal({ producto, onGuardar, onCerrar }: P
         </div>
 
         <div className="p-5 space-y-4">
+          {/* Imagen del producto */}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wide block mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              Foto del producto
+            </label>
+            <label className="block cursor-pointer group">
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) subirImagen(f) }}
+              />
+              <div
+                className="relative w-full h-40 rounded-2xl overflow-hidden flex items-center justify-center transition-all"
+                style={{ background: imagenUrl ? 'transparent' : tema.soft, border: `2px dashed ${imagenUrl ? 'var(--gold)' : tema.color}` }}
+              >
+                {subiendoImagen ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <div style={{ width: 28, height: 28, border: '3px solid rgba(201,169,110,0.3)', borderTop: '3px solid var(--gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                    <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Subiendo...</p>
+                  </div>
+                ) : imagenUrl ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={imagenUrl} alt={producto.nombre} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'rgba(28,10,0,0.5)' }}>
+                      <span className="text-sm font-bold" style={{ color: '#FEF8F0' }}>Cambiar foto</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-2" style={{ color: tema.color }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                      <rect width="18" height="18" x="3" y="3" rx="2" /><circle cx="9" cy="9" r="2" />
+                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                    </svg>
+                    <p className="text-xs font-semibold">Toca para agregar foto</p>
+                  </div>
+                )}
+              </div>
+            </label>
+          </div>
+
           {/* Reabastecer rápido */}
           <div>
             <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Reabastecer</label>
