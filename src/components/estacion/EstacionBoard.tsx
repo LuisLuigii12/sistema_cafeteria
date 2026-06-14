@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import RecetaModal from './RecetaModal'
 import type { Orden, TipoDestino } from '@/types'
 
 interface Props {
@@ -27,7 +26,10 @@ function urgencia(mins: number) {
   return '#EF4444'
 }
 
-type RecetaSel = { nombre: string; ingredientes: string | null }
+function lineasIngredientes(texto?: string | null): string[] {
+  if (!texto) return []
+  return texto.split('\n').map((l) => l.replace(/^\s*\d+[.)]\s*/, '').trim()).filter(Boolean)
+}
 
 export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
   const [ordenes, setOrdenes] = useState<Orden[]>([])
@@ -35,7 +37,6 @@ export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
   const [ahora, setAhora] = useState(() => Date.now())
   const [sonido, setSonido] = useState(false)
   const [flash, setFlash] = useState(false)
-  const [receta, setReceta] = useState<RecetaSel | null>(null)
   const [deshacer, setDeshacer] = useState<{ id: string; mesa?: number } | null>(null)
   const [recetas, setRecetas] = useState<Record<string, { ingredientes: string | null; preparacion: string | null }>>({})
   const prevIds = useRef<Set<string> | null>(null)
@@ -209,26 +210,27 @@ export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
                     {/* Items */}
                     <ul className="space-y-2 flex-1">
                       {orden.orden_items?.map((item) => {
-                        const rec = recetas[item.producto_id]
-                        const tieneReceta = !!rec?.ingredientes
+                        const ings = lineasIngredientes(recetas[item.producto_id]?.ingredientes)
                         return (
                           <li key={item.id} className="flex items-start gap-2.5">
                             <span className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold" style={{ background: `${color}22`, color }}>{item.cantidad}</span>
                             <div className="flex-1 min-w-0">
-                              <p style={{ color: '#FEF8F0', fontSize: '0.95rem', fontWeight: 500, lineHeight: 1.3 }}>{item.productos?.nombre}</p>
+                              <p style={{ color: '#FEF8F0', fontSize: '0.95rem', fontWeight: 600, lineHeight: 1.3 }}>{item.productos?.nombre}</p>
                               {item.notas && <p style={{ color: 'var(--gold)', fontSize: '0.72rem', marginTop: 2, fontStyle: 'italic' }}>↳ {item.notas}</p>}
+                              {ings.length > 0 && (
+                                <div className="mt-1.5 rounded-lg px-2.5 py-2" style={{ background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.18)' }}>
+                                  <p style={{ color: 'var(--gold)', fontSize: '0.56rem', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 5 }}>Lleva</p>
+                                  <ol className="space-y-1">
+                                    {ings.map((ing, idx) => (
+                                      <li key={idx} className="flex gap-2 items-baseline" style={{ fontSize: '0.82rem', lineHeight: 1.25 }}>
+                                        <span className="flex-shrink-0 tabular-nums" style={{ color: 'var(--gold)', fontWeight: 700 }}>{idx + 1}.</span>
+                                        <span style={{ color: 'rgba(254,248,240,0.92)' }}>{ing}</span>
+                                      </li>
+                                    ))}
+                                  </ol>
+                                </div>
+                              )}
                             </div>
-                            {tieneReceta && (
-                              <button
-                                onClick={() => setReceta({ nombre: item.productos!.nombre, ingredientes: rec?.ingredientes ?? null })}
-                                className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors hover:bg-white/10"
-                                style={{ color: 'var(--gold)', border: '1px solid rgba(201,169,110,0.3)' }}
-                                aria-label="Cómo se prepara"
-                                title="¿Cómo se prepara?"
-                              >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg>
-                              </button>
-                            )}
                           </li>
                         )
                       })}
@@ -259,9 +261,6 @@ export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
         </div>
       )}
 
-      {receta && (
-        <RecetaModal nombre={receta.nombre} ingredientes={receta.ingredientes} onCerrar={() => setReceta(null)} />
-      )}
     </div>
   )
 }
