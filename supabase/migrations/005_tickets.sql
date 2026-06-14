@@ -21,4 +21,9 @@ CREATE TABLE IF NOT EXISTS tickets (
 ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS pagado BOOLEAN NOT NULL DEFAULT false;
 
 ALTER TABLE tickets DISABLE ROW LEVEL SECURITY;
-ALTER PUBLICATION supabase_realtime ADD TABLE tickets;
+
+-- Agrega a realtime solo si aún no está (evita error "already member")
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE tickets;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;

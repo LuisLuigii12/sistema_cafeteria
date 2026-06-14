@@ -8,7 +8,6 @@ import CategoryFilter from '@/components/mesa/CategoryFilter'
 import MenuGrid from '@/components/mesa/MenuGrid'
 import OrderSummary from '@/components/mesa/OrderSummary'
 import ActiveOrdersBanner from '@/components/mesa/ActiveOrdersBanner'
-import CobrarModal from '@/components/mesa/CobrarModal'
 import type { Categoria, Producto, Mesa, ItemCarrito, TipoDestino, Orden } from '@/types'
 
 export default function MesaPage() {
@@ -24,7 +23,6 @@ export default function MesaPage() {
   const [carrito, setCarrito] = useState<ItemCarrito[]>([])
   const [ordenesActivas, setOrdenesActivas] = useState<Orden[]>([])
   const [enviando, setEnviando] = useState(false)
-  const [cobrando, setCobrando] = useState(false)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
 
@@ -146,11 +144,6 @@ export default function MesaPage() {
     }
   }
 
-  function cobrado() {
-    setCobrando(false)
-    router.push('/')
-  }
-
   // ── Loading ──────────────────────────────────────────────
   if (loading) {
     return (
@@ -203,19 +196,6 @@ export default function MesaPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Cobrar — abre la cuenta / checkout */}
-            {mesa.estado !== 'libre' && (
-              <button
-                onClick={() => setCobrando(true)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all duration-200 min-h-[44px] hover:brightness-110 active:scale-[0.98]"
-                style={{ background: '#16A34A', color: '#F0FDF4' }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                </svg>
-                Cobrar
-              </button>
-            )}
             <span className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: estadoBadge.bg, color: estadoBadge.color }}>
               {estadoBadge.label}
             </span>
@@ -297,15 +277,6 @@ export default function MesaPage() {
           }
           {toast.msg}
         </div>
-      )}
-
-      {cobrando && (
-        <CobrarModal
-          mesaId={mesaId}
-          mesaNumero={mesa.numero}
-          onCobrado={cobrado}
-          onCerrar={() => setCobrando(false)}
-        />
       )}
     </div>
   )
