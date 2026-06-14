@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  /* ── Surfaces (escalera: página cálida < tarjeta blanca) ── */
-  --bg-cream:     #F1E7D5;   /* página: crema cálida, más comprometida (las tarjetas resaltan) */
+  /* ── Surfaces ─────────────────────────────── */
+  --bg-cream:     #F5EDE0;   /* página: crema claro (original) */
   --bg-card:      #FFFFFF;
-  --bg-card-soft: #FBF4E9;   /* tarjeta tenue cálida */
+  --bg-card-soft: #FFFBF5;   /* tarjeta tenue cálida */
   --bg-dark:      #100500;   /* superficie más oscura (cocina) */
 
   /* ── Coffee scale (single source of truth) ── */
