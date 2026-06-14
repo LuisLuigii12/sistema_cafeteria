@@ -82,7 +82,7 @@ export default function ProductoRow({ producto, index, onAjustar, onEditar, onTo
         </div>
         <div className="text-right">
           <p className="text-sm font-bold tabular-nums" style={{ color: margen >= 0 ? '#15803D' : '#EF4444' }}>{formatMoney(margen)}</p>
-          <p className="text-[0.68rem]" style={{ color: 'var(--text-muted)' }}>Margen {formatPercent(margenPct)}</p>
+          <p className="text-[0.68rem]" style={{ color: 'var(--text-muted)' }}>Ganas {formatPercent(margenPct)}</p>
         </div>
       </div>
 

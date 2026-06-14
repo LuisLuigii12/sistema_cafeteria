@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import TopNav from '@/components/shared/TopNav'
 import GastoModal from '@/components/finanzas/GastoModal'
-import { formatMoney, formatMoneyShort, formatPercent } from '@/lib/format'
+import { formatMoney, formatMoneyShort } from '@/lib/format'
 import type { Orden, Gasto, CategoriaGasto } from '@/types'
 
 type Periodo = 'hoy' | '7d' | '30d' | 'todo'
@@ -120,9 +120,9 @@ export default function FinanzasPage() {
   const fUtil = Math.max(0, m.ingresos - egresos) / denom
 
   const kpis = [
-    { label: 'Ingresos', valor: m.ingresos, color: '#16A34A', sub: `${m.numOrdenes} ${m.numOrdenes === 1 ? 'orden' : 'órdenes'}` },
-    { label: 'Costo de productos', valor: m.cogs, color: '#D97706', sub: 'lo que costó producir' },
-    { label: 'Gastos operativos', valor: m.gastosOp, color: '#EF4444', sub: 'renta, sueldos, etc.' },
+    { label: 'Vendiste', valor: m.ingresos, color: '#16A34A', sub: `${m.numOrdenes} ${m.numOrdenes === 1 ? 'venta' : 'ventas'}` },
+    { label: 'Costo de lo vendido', valor: m.cogs, color: '#D97706', sub: 'lo que te costó hacerlo' },
+    { label: 'Gastos', valor: m.gastosOp, color: '#EF4444', sub: 'renta, sueldos, luz…' },
   ]
 
   return (
@@ -173,19 +173,14 @@ export default function FinanzasPage() {
                   style={{ background: positiva ? '#ECFDF5' : '#FEF2F2', border: `1px solid ${positiva ? '#A7F3D0' : '#FECACA'}`, boxShadow: 'var(--shadow-md)' }}
                 >
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.72rem', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700 }}>
-                    Utilidad neta
+                    {positiva ? 'Te quedó' : 'Vas perdiendo'}
                   </p>
                   <p className="tabular-nums mt-1" style={{ fontFamily: "'Playfair Display', serif", fontSize: '2.6rem', fontWeight: 800, color: acento, lineHeight: 1 }}>
                     {formatMoney(m.utilidadNeta)}
                   </p>
-                  <div className="flex items-center gap-4 mt-3 flex-wrap">
-                    <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                      Margen neto <strong style={{ color: acento }}>{formatPercent(m.margen)}</strong>
-                    </span>
-                    <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                      Utilidad bruta <strong style={{ color: 'var(--espresso)' }}>{formatMoney(m.utilidadBruta)}</strong>
-                    </span>
-                  </div>
+                  <p className="text-sm mt-3" style={{ color: 'var(--text-muted)' }}>
+                    De <strong style={{ color: 'var(--espresso)' }}>{formatMoney(m.ingresos)}</strong> que vendiste
+                  </p>
 
                   {/* Breakdown bar */}
                   <div className="mt-5">
@@ -195,7 +190,7 @@ export default function FinanzasPage() {
                       <div className="transition-all duration-500" style={{ width: `${fUtil * 100}%`, background: '#22C55E' }} title="Ganancia" />
                     </div>
                     <div className="flex gap-4 mt-2.5 flex-wrap">
-                      <Leyenda color="#D97706" label="Costo productos" valor={formatMoney(m.cogs)} />
+                      <Leyenda color="#D97706" label="Costo" valor={formatMoney(m.cogs)} />
                       <Leyenda color="#EF4444" label="Gastos" valor={formatMoney(m.gastosOp)} />
                       <Leyenda color="#22C55E" label={positiva ? 'Ganancia' : 'Pérdida'} valor={formatMoney(Math.abs(m.utilidadNeta))} />
                     </div>
