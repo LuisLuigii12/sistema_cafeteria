@@ -78,12 +78,31 @@ export interface Orden {
   mesa_id: string
   estado: EstadoOrden
   destino: TipoDestino
+  pagado: boolean
   created_at: string
   updated_at: string
   total: number
   notas: string | null
   mesas?: Mesa
   orden_items?: OrdenItem[]
+}
+
+export type MetodoPago = 'efectivo' | 'tarjeta' | 'transferencia'
+
+export interface TicketItem {
+  nombre: string
+  cantidad: number
+  precio_unitario: number
+}
+
+export interface Ticket {
+  id: string
+  folio: number
+  mesa_numero: number | null
+  total: number
+  metodo_pago: MetodoPago
+  items: TicketItem[]
+  created_at: string
 }
 
 export interface ItemCarrito {

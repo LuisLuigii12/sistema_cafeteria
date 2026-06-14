@@ -55,6 +55,17 @@ CREATE TABLE insumos (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Tickets (recibos de ventas cobradas)
+CREATE TABLE tickets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  folio BIGSERIAL,
+  mesa_numero INTEGER,
+  total NUMERIC(10,2) NOT NULL DEFAULT 0,
+  metodo_pago TEXT NOT NULL DEFAULT 'efectivo',
+  items JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Mesas de la cafeteria
 CREATE TABLE mesas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

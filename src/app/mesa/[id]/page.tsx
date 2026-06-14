@@ -8,6 +8,7 @@ import CategoryFilter from '@/components/mesa/CategoryFilter'
 import MenuGrid from '@/components/mesa/MenuGrid'
 import OrderSummary from '@/components/mesa/OrderSummary'
 import ActiveOrdersBanner from '@/components/mesa/ActiveOrdersBanner'
+import CobrarModal from '@/components/mesa/CobrarModal'
 import type { Categoria, Producto, Mesa, ItemCarrito, TipoDestino, Orden } from '@/types'
 
 export default function MesaPage() {
@@ -23,7 +24,7 @@ export default function MesaPage() {
   const [carrito, setCarrito] = useState<ItemCarrito[]>([])
   const [ordenesActivas, setOrdenesActivas] = useState<Orden[]>([])
   const [enviando, setEnviando] = useState(false)
-  const [cerrando, setCerrando] = useState(false)
+  const [cobrando, setCobrando] = useState(false)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
 
@@ -145,25 +146,8 @@ export default function MesaPage() {
     }
   }
 
-  async function cerrarMesa() {
-    if (!mesa) return
-    setCerrando(true)
-    await supabase.from('mesas').update({ estado: 'por_pagar' }).eq('id', mesaId)
-    setMesa(m => m ? { ...m, estado: 'por_pagar' } : m)
-    mostrarToast('Mesa marcada — llevar la cuenta')
-    setCerrando(false)
-  }
-
-  async function liberarMesa() {
-    if (!mesa) return
-    setCerrando(true)
-    // Cierra las órdenes activas de la mesa (entregadas) y libera la mesa
-    await supabase.from('ordenes').update({ estado: 'entregado' })
-      .eq('mesa_id', mesaId).in('estado', ['pendiente', 'en_preparacion', 'listo'])
-    await supabase.from('mesas').update({ estado: 'libre' }).eq('id', mesaId)
-    setMesa(m => m ? { ...m, estado: 'libre' } : m)
-    mostrarToast('Mesa liberada')
-    setCerrando(false)
+  function cobrado() {
+    setCobrando(false)
     router.push('/')
   }
 
@@ -219,32 +203,17 @@ export default function MesaPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Botón cobrar (ocupada → por_pagar) */}
-            {mesa.estado === 'ocupada' && (
+            {/* Cobrar — abre la cuenta / checkout */}
+            {mesa.estado !== 'libre' && (
               <button
-                onClick={cerrarMesa}
-                disabled={cerrando}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all duration-200 min-h-[44px]"
-                style={{ background: 'rgba(239,68,68,0.15)', color: '#FCA5A5', border: '1px solid rgba(239,68,68,0.3)' }}
+                onClick={() => setCobrando(true)}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all duration-200 min-h-[44px] hover:brightness-110 active:scale-[0.98]"
+                style={{ background: '#16A34A', color: '#F0FDF4' }}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                 </svg>
                 Cobrar
-              </button>
-            )}
-            {/* Botón liberar (por_pagar → libre) */}
-            {mesa.estado === 'por_pagar' && (
-              <button
-                onClick={liberarMesa}
-                disabled={cerrando}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all duration-200 min-h-[44px]"
-                style={{ background: 'rgba(34,197,94,0.15)', color: '#86EFAC', border: '1px solid rgba(34,197,94,0.3)' }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                Liberar
               </button>
             )}
             <span className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: estadoBadge.bg, color: estadoBadge.color }}>
@@ -328,6 +297,15 @@ export default function MesaPage() {
           }
           {toast.msg}
         </div>
+      )}
+
+      {cobrando && (
+        <CobrarModal
+          mesaId={mesaId}
+          mesaNumero={mesa.numero}
+          onCobrado={cobrado}
+          onCerrar={() => setCobrando(false)}
+        />
       )}
     </div>
   )
