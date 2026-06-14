@@ -172,7 +172,7 @@ export default function MesaPage() {
                                  { bg: '#FEE2E2', color: '#B91C1C', label: 'Por pagar' }
 
   return (
-    <div className="flex flex-col h-screen" style={{ background: '#F5EDE0' }}>
+    <div className="flex flex-col h-screen" style={{ background: 'var(--bg-cream)' }}>
 
       {/* ── Header ─────────────────────────────────────────── */}
       <header className="flex-shrink-0" style={{ background: '#1C0A00', borderBottom: '2px solid #C9A96E' }}>
@@ -219,7 +219,7 @@ export default function MesaPage() {
 
         {/* Menu */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="px-4 pt-3 pb-2 flex-shrink-0" style={{ background: '#F5EDE0' }}>
+          <div className="px-4 pt-3 pb-2 flex-shrink-0" style={{ background: 'var(--bg-cream)' }}>
             <CategoryFilter
               categorias={categoriasFiltradas}
               categoriaActiva={categoriaActiva}

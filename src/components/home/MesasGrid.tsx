@@ -82,9 +82,9 @@ export default function MesasGrid() {
   }
 
   const stats = [
-    { label: 'Disponibles', count: libres,   color: '#22C55E' },
-    { label: 'Ocupadas',    count: ocupadas, color: '#C9A96E' },
-    { label: 'Por cobrar',  count: porPagar, color: '#EF4444' },
+    { label: 'Disponibles', count: libres,   color: '#16A34A', icon: <><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></> },
+    { label: 'Ocupadas',    count: ocupadas, color: '#B8862F', icon: <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></> },
+    { label: 'Por cobrar',  count: porPagar, color: '#DC2626', icon: <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></> },
   ]
 
   function Tarjeta({ mesa }: { mesa: Mesa }) {
@@ -95,14 +95,13 @@ export default function MesasGrid() {
 
     return (
       <div
-        className="relative h-44 rounded-2xl overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-1"
+        className="lift relative h-44 rounded-2xl overflow-hidden flex flex-col"
         style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow-md)' }}
       >
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: e.accent, zIndex: 1 }} />
         <span
           aria-hidden
           className="absolute pointer-events-none select-none"
-          style={{ right: -8, bottom: -28, fontFamily: "'Playfair Display', serif", fontSize: '8rem', fontWeight: 700, lineHeight: 1, color: e.accent, opacity: 0.06 }}
+          style={{ right: -10, bottom: -30, fontFamily: "'Playfair Display', serif", fontSize: '8.5rem', fontWeight: 700, lineHeight: 1, color: e.accent, opacity: 0.07 }}
         >
           {mesa.numero}
         </span>
@@ -163,20 +162,22 @@ export default function MesasGrid() {
   return (
     <>
       {/* Stats bar */}
-      <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-5">
         {stats.map(stat => (
           <div
             key={stat.label}
-            className="rounded-xl px-5 py-4 flex items-center justify-between"
-            style={{ background: 'var(--bg-card)', borderLeft: `4px solid ${stat.color}`, boxShadow: 'var(--shadow-sm)' }}
+            className="rounded-2xl px-4 sm:px-5 py-4 flex items-center gap-3 sm:gap-4"
+            style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow-md)' }}
           >
-            <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full" style={{ background: stat.color }} />
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 500 }}>{stat.label}</span>
-            </div>
-            <span style={{ color: 'var(--espresso)', fontSize: '1.75rem', fontWeight: 800, fontFamily: "'Playfair Display', serif" }}>
-              {stat.count}
+            <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${stat.color}1a`, color: stat.color }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{stat.icon}</svg>
             </span>
+            <div className="min-w-0">
+              <p className="tabular-nums" style={{ fontFamily: "'Playfair Display', serif", fontSize: '2rem', fontWeight: 800, color: 'var(--espresso)', lineHeight: 1 }}>
+                {stat.count}
+              </p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 600, marginTop: 3 }}>{stat.label}</p>
+            </div>
           </div>
         ))}
       </div>

@@ -37,7 +37,7 @@ export default function TopNav() {
   return (
     <header
       className="px-4 sm:px-6 py-3 flex items-center justify-between gap-4 sticky top-0 z-30"
-      style={{ background: 'var(--espresso)', borderBottom: '2px solid var(--gold)' }}
+      style={{ background: 'linear-gradient(180deg, #230D02 0%, #160600 100%)', borderBottom: '2px solid var(--gold)', boxShadow: '0 6px 20px -8px rgba(40,20,7,0.5)' }}
     >
       {/* Brand */}
       <Link href="/" className="flex items-center gap-3 flex-shrink-0">
