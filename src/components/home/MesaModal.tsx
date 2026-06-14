@@ -14,7 +14,6 @@ interface Props {
 export default function MesaModal({ mesa, sugerenciaNumero, onGuardar, onCerrar }: Props) {
   const esNueva = !mesa
   const [numero, setNumero] = useState(String(mesa?.numero ?? sugerenciaNumero))
-  const [capacidad, setCapacidad] = useState(mesa?.capacidad ?? 4)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -24,8 +23,8 @@ export default function MesaModal({ mesa, sugerenciaNumero, onGuardar, onCerrar 
     setGuardando(true); setError(null)
 
     const res = esNueva
-      ? await supabase.from('mesas').insert({ numero: num, capacidad, estado: 'libre' })
-      : await supabase.from('mesas').update({ numero: num, capacidad }).eq('id', mesa!.id)
+      ? await supabase.from('mesas').insert({ numero: num, estado: 'libre' })
+      : await supabase.from('mesas').update({ numero: num }).eq('id', mesa!.id)
 
     if (res.error) {
       setError(res.error.code === '23505' ? `Ya existe la mesa ${num}` : 'No se pudo guardar')
@@ -79,29 +78,6 @@ export default function MesaModal({ mesa, sugerenciaNumero, onGuardar, onCerrar 
               className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none focus:border-[var(--gold)]"
               style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--espresso)' }}
             />
-          </div>
-
-          {/* Capacidad */}
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wide block mb-1.5" style={{ color: 'var(--text-muted)' }}>Personas que caben</label>
-            <div className="flex items-center justify-between rounded-xl px-2 py-2" style={{ border: '1px solid var(--border)', background: 'var(--bg-card-soft)' }}>
-              <button
-                onClick={() => setCapacidad((c) => Math.max(1, c - 1))}
-                className="w-11 h-11 rounded-lg flex items-center justify-center text-2xl cursor-pointer transition-colors hover:bg-[var(--gold-soft)]"
-                style={{ color: 'var(--espresso)' }}
-                aria-label="Menos"
-              >−</button>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold tabular-nums" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--espresso)' }}>{capacidad}</span>
-                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>personas</span>
-              </div>
-              <button
-                onClick={() => setCapacidad((c) => Math.min(20, c + 1))}
-                className="w-11 h-11 rounded-lg flex items-center justify-center text-2xl cursor-pointer transition-colors hover:bg-[var(--gold-soft)]"
-                style={{ color: 'var(--espresso)' }}
-                aria-label="Más"
-              >+</button>
-            </div>
           </div>
 
           {error && (

@@ -28,6 +28,8 @@ export interface Producto {
   disponible: boolean
   imagen_url: string | null
   descripcion: string | null
+  ingredientes: string | null
+  preparacion: string | null
   categorias?: Categoria
   producto_opciones?: ProductoOpcion[]
 }

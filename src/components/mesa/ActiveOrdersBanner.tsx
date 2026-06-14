@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
 import type { Orden } from '@/types'
 
 interface Props {
@@ -15,6 +16,13 @@ const ESTADO_LABEL: Record<string, { label: string; color: string }> = {
 
 export default function ActiveOrdersBanner({ ordenes }: Props) {
   const [abierto, setAbierto] = useState(false)
+  const [entregando, setEntregando] = useState<string | null>(null)
+
+  async function entregar(id: string) {
+    setEntregando(id)
+    await supabase.from('ordenes').update({ estado: 'entregado' }).eq('id', id)
+    setEntregando(null)
+  }
 
   if (ordenes.length === 0) return null
 
@@ -70,6 +78,17 @@ export default function ActiveOrdersBanner({ ordenes }: Props) {
                 <p style={{ color: '#FEF8F0', fontSize: '0.8rem' }}>
                   {items.map(i => `${i.cantidad}× ${i.productos?.nombre}`).join(', ')}
                 </p>
+                {orden.estado === 'listo' && (
+                  <button
+                    onClick={() => entregar(orden.id)}
+                    disabled={entregando === orden.id}
+                    className="mt-2 w-full py-2 rounded-lg text-xs font-bold cursor-pointer transition-all hover:brightness-110 active:scale-[0.99] flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    style={{ background: '#16A34A', color: '#F0FDF4' }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    {entregando === orden.id ? 'Entregando...' : 'Marcar entregado'}
+                  </button>
+                )}
               </div>
             )
           })}

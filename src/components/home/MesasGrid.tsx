@@ -15,6 +15,7 @@ const ESTADO: Record<EstadoMesa, { label: string; accent: string; badge: string;
 export default function MesasGrid() {
   const [mesas, setMesas] = useState<Mesa[]>([])
   const [ordenesActivas, setOrdenesActivas] = useState<Record<string, number>>({})
+  const [listosPorMesa, setListosPorMesa] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [admin, setAdmin] = useState(false)
   const [editando, setEditando] = useState<Mesa | null>(null)
@@ -23,13 +24,18 @@ export default function MesasGrid() {
   async function fetchTodo() {
     const [{ data: mesasData }, { data: ordenesData }] = await Promise.all([
       supabase.from('mesas').select('*').order('numero'),
-      supabase.from('ordenes').select('mesa_id').in('estado', ['pendiente', 'en_preparacion', 'listo']),
+      supabase.from('ordenes').select('mesa_id, estado').in('estado', ['pendiente', 'en_preparacion', 'listo']),
     ])
     if (mesasData) setMesas(mesasData)
     if (ordenesData) {
-      const conteo: Record<string, number> = {}
-      ordenesData.forEach((o) => { conteo[o.mesa_id] = (conteo[o.mesa_id] ?? 0) + 1 })
-      setOrdenesActivas(conteo)
+      const activas: Record<string, number> = {}
+      const listos: Record<string, number> = {}
+      ordenesData.forEach((o) => {
+        activas[o.mesa_id] = (activas[o.mesa_id] ?? 0) + 1
+        if (o.estado === 'listo') listos[o.mesa_id] = (listos[o.mesa_id] ?? 0) + 1
+      })
+      setOrdenesActivas(activas)
+      setListosPorMesa(listos)
     }
     setLoading(false)
   }
@@ -119,15 +125,16 @@ export default function MesasGrid() {
             <p className="text-xs font-medium mb-2" style={{ color: admin ? 'var(--brown)' : e.badgeText }}>
               {admin ? 'Toca para editar' : e.hint}
             </p>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{mesa.capacidad} pers.</span>
-              </div>
-              {!admin && (ordenesActivas[mesa.id] ?? 0) > 0 && (
+            <div className="flex items-center justify-end min-h-[24px]">
+              {!admin && (listosPorMesa[mesa.id] ?? 0) > 0 ? (
+                <span
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold pulse-dot"
+                  style={{ background: 'var(--green-soft)', color: 'var(--green-text)', border: '1px solid #86EFAC' }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  Listo para recoger
+                </span>
+              ) : !admin && (ordenesActivas[mesa.id] ?? 0) > 0 ? (
                 <span
                   className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
                   style={{ background: 'var(--gold-soft)', color: 'var(--brown)', border: '1px solid var(--gold)' }}
@@ -135,9 +142,9 @@ export default function MesasGrid() {
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                     <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" />
                   </svg>
-                  {ordenesActivas[mesa.id]}
+                  {ordenesActivas[mesa.id]} en preparación
                 </span>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

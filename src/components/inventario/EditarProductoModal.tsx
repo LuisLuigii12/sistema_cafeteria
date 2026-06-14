@@ -24,6 +24,8 @@ export default function EditarProductoModal({ producto, onGuardar, onCerrar }: P
   const [precio, setPrecio] = useState(String(producto.precio))
   const [costo, setCosto] = useState(String(producto.costo))
   const [disponible, setDisponible] = useState(producto.disponible)
+  const [ingredientes, setIngredientes] = useState(producto.ingredientes ?? '')
+  const [preparacion, setPreparacion] = useState(producto.preparacion ?? '')
   const [opciones, setOpciones] = useState<ProductoOpcion[]>([])
   const [nuevaOpcion, setNuevaOpcion] = useState('')
 
@@ -73,6 +75,8 @@ export default function EditarProductoModal({ producto, onGuardar, onCerrar }: P
       precio: Math.max(0, precioN),
       costo: Math.max(0, costoN),
       disponible,
+      ingredientes: ingredientes.trim() || null,
+      preparacion: preparacion.trim() || null,
     })
   }
 
@@ -200,6 +204,34 @@ export default function EditarProductoModal({ producto, onGuardar, onCerrar }: P
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
               </button>
             </div>
+          </div>
+
+          {/* Receta / guía de preparación */}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wide block mb-0.5" style={{ color: 'var(--text-muted)' }}>
+              Receta — guía de preparación
+            </label>
+            <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
+              Se muestra en Cocina/Barra para ayudar a quien prepara
+            </p>
+            <label className="text-xs font-medium block mb-1" style={{ color: 'var(--brown)' }}>Ingredientes (uno por línea)</label>
+            <textarea
+              value={ingredientes}
+              onChange={(e) => setIngredientes(e.target.value)}
+              rows={4}
+              placeholder={'Totopos\nSalsa verde\nPollo deshebrado\nCrema'}
+              className="w-full px-3 py-2 rounded-xl text-sm outline-none focus:border-[var(--gold)] resize-none mb-3"
+              style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--espresso)' }}
+            />
+            <label className="text-xs font-medium block mb-1" style={{ color: 'var(--brown)' }}>Pasos (uno por línea)</label>
+            <textarea
+              value={preparacion}
+              onChange={(e) => setPreparacion(e.target.value)}
+              rows={5}
+              placeholder={'1. Calienta la salsa\n2. Agrega los totopos\n3. Sirve y decora'}
+              className="w-full px-3 py-2 rounded-xl text-sm outline-none focus:border-[var(--gold)] resize-none"
+              style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--espresso)' }}
+            />
           </div>
         </div>
 

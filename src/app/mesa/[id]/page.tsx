@@ -157,6 +157,9 @@ export default function MesaPage() {
   async function liberarMesa() {
     if (!mesa) return
     setCerrando(true)
+    // Cierra las órdenes activas de la mesa (entregadas) y libera la mesa
+    await supabase.from('ordenes').update({ estado: 'entregado' })
+      .eq('mesa_id', mesaId).in('estado', ['pendiente', 'en_preparacion', 'listo'])
     await supabase.from('mesas').update({ estado: 'libre' }).eq('id', mesaId)
     setMesa(m => m ? { ...m, estado: 'libre' } : m)
     mostrarToast('Mesa liberada')
@@ -213,9 +216,6 @@ export default function MesaPage() {
               <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.25rem', fontWeight: 700, color: '#FEF8F0', lineHeight: 1.1 }}>
                 Mesa {mesa.numero}
               </h1>
-              <p style={{ color: '#C9A96E', fontSize: '0.7rem', letterSpacing: '0.08em' }}>
-                {mesa.capacidad} personas
-              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">

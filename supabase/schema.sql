@@ -22,6 +22,8 @@ CREATE TABLE productos (
   categoria_id UUID NOT NULL REFERENCES categorias(id),
   disponible BOOLEAN NOT NULL DEFAULT true,
   imagen_url TEXT,
+  ingredientes TEXT,
+  preparacion TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
