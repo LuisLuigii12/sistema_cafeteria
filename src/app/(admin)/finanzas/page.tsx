@@ -163,42 +163,46 @@ export default function FinanzasPage() {
           </div>
         ) : (
           <>
-            {/* Utilidad neta — héroe */}
-            <div
-              className="rounded-3xl p-6 mb-4 relative overflow-hidden animate-in"
-              style={{ background: 'linear-gradient(135deg, #2C1407 0%, #1C0A00 100%)', boxShadow: 'var(--shadow-lg)' }}
-            >
-              <div className="relative z-10">
-                <p style={{ color: 'var(--gold)', fontSize: '0.72rem', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600 }}>
-                  Utilidad neta
-                </p>
-                <p className="tabular-nums mt-1" style={{ fontFamily: "'Playfair Display', serif", fontSize: '2.6rem', fontWeight: 800, color: m.utilidadNeta >= 0 ? '#FEF8F0' : '#FCA5A5', lineHeight: 1 }}>
-                  {formatMoney(m.utilidadNeta)}
-                </p>
-                <div className="flex items-center gap-4 mt-3 flex-wrap">
-                  <span className="text-sm" style={{ color: 'rgba(254,248,240,0.65)' }}>
-                    Margen neto <strong style={{ color: m.margen >= 0 ? '#86EFAC' : '#FCA5A5' }}>{formatPercent(m.margen)}</strong>
-                  </span>
-                  <span className="text-sm" style={{ color: 'rgba(254,248,240,0.65)' }}>
-                    Utilidad bruta <strong style={{ color: '#FEF8F0' }}>{formatMoney(m.utilidadBruta)}</strong>
-                  </span>
-                </div>
+            {/* Utilidad neta — héroe (verde si ganas, rojo si pierdes) */}
+            {(() => {
+              const positiva = m.utilidadNeta >= 0
+              const acento = positiva ? '#15803D' : '#DC2626'
+              return (
+                <div
+                  className="rounded-3xl p-6 mb-4 animate-in"
+                  style={{ background: positiva ? '#ECFDF5' : '#FEF2F2', border: `1px solid ${positiva ? '#A7F3D0' : '#FECACA'}`, boxShadow: 'var(--shadow-md)' }}
+                >
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.72rem', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700 }}>
+                    Utilidad neta
+                  </p>
+                  <p className="tabular-nums mt-1" style={{ fontFamily: "'Playfair Display', serif", fontSize: '2.6rem', fontWeight: 800, color: acento, lineHeight: 1 }}>
+                    {formatMoney(m.utilidadNeta)}
+                  </p>
+                  <div className="flex items-center gap-4 mt-3 flex-wrap">
+                    <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                      Margen neto <strong style={{ color: acento }}>{formatPercent(m.margen)}</strong>
+                    </span>
+                    <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                      Utilidad bruta <strong style={{ color: 'var(--espresso)' }}>{formatMoney(m.utilidadBruta)}</strong>
+                    </span>
+                  </div>
 
-                {/* Breakdown bar */}
-                <div className="mt-5">
-                  <div className="flex h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                    <div className="transition-all duration-500" style={{ width: `${fCogs * 100}%`, background: '#D97706' }} title="Costo de productos" />
-                    <div className="transition-all duration-500" style={{ width: `${fGastos * 100}%`, background: '#EF4444' }} title="Gastos operativos" />
-                    <div className="transition-all duration-500" style={{ width: `${fUtil * 100}%`, background: '#22C55E' }} title="Ganancia" />
-                  </div>
-                  <div className="flex gap-4 mt-2.5 flex-wrap">
-                    <Leyenda color="#D97706" label="Costo productos" valor={formatMoney(m.cogs)} />
-                    <Leyenda color="#EF4444" label="Gastos" valor={formatMoney(m.gastosOp)} />
-                    <Leyenda color="#22C55E" label={m.utilidadNeta >= 0 ? 'Ganancia' : 'Pérdida'} valor={formatMoney(Math.abs(m.utilidadNeta))} />
+                  {/* Breakdown bar */}
+                  <div className="mt-5">
+                    <div className="flex h-3 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.06)' }}>
+                      <div className="transition-all duration-500" style={{ width: `${fCogs * 100}%`, background: '#D97706' }} title="Costo de productos" />
+                      <div className="transition-all duration-500" style={{ width: `${fGastos * 100}%`, background: '#EF4444' }} title="Gastos operativos" />
+                      <div className="transition-all duration-500" style={{ width: `${fUtil * 100}%`, background: '#22C55E' }} title="Ganancia" />
+                    </div>
+                    <div className="flex gap-4 mt-2.5 flex-wrap">
+                      <Leyenda color="#D97706" label="Costo productos" valor={formatMoney(m.cogs)} />
+                      <Leyenda color="#EF4444" label="Gastos" valor={formatMoney(m.gastosOp)} />
+                      <Leyenda color="#22C55E" label={positiva ? 'Ganancia' : 'Pérdida'} valor={formatMoney(Math.abs(m.utilidadNeta))} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              )
+            })()}
 
             {/* KPI cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
@@ -313,9 +317,9 @@ export default function FinanzasPage() {
 
 function Leyenda({ color, label, valor }: { color: string; label: string; valor: string }) {
   return (
-    <span className="flex items-center gap-1.5 text-xs" style={{ color: 'rgba(254,248,240,0.65)' }}>
+    <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
       <span className="w-2 h-2 rounded-full" style={{ background: color }} />
-      {label} <strong style={{ color: '#FEF8F0' }}>{valor}</strong>
+      {label} <strong style={{ color: 'var(--espresso)' }}>{valor}</strong>
     </span>
   )
 }
