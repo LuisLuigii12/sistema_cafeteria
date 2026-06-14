@@ -94,20 +94,20 @@ export default function OrderSummary({
               <p className="text-sm font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--espresso)' }}>${(item.producto.precio * item.cantidad).toFixed(2)}</p>
             </div>
 
-            {/* Línea 2: chips compactos + "otra" */}
-            <div className="flex flex-wrap gap-1 mt-2">
+            {/* Línea 2: opciones — botones grandes y parejos (estándar POS: Square/Toast) */}
+            <div className="grid grid-cols-2 gap-1.5 mt-2">
               {notasRapidas(item.producto).map((chip) => {
                 const activo = notaActiva(item.notas, chip)
                 return (
                   <button
                     key={chip}
                     onClick={() => onActualizarNota(item.producto.id, alternarNota(item.notas, chip))}
-                    className="flex items-center gap-0.5 px-2 py-1 rounded-full text-[0.72rem] font-semibold cursor-pointer transition-all active:scale-95"
+                    className="flex items-center justify-center gap-1 py-2.5 px-2 rounded-xl text-sm font-semibold cursor-pointer transition-all active:scale-[0.97]"
                     style={activo
-                      ? { background: 'var(--gold)', color: 'var(--espresso)' }
+                      ? { background: 'var(--gold)', color: 'var(--espresso)', boxShadow: 'var(--shadow-sm)' }
                       : { background: 'var(--bg-card)', color: 'var(--brown)', border: '1px solid var(--border)' }}
                   >
-                    {activo && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                    {activo && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
                     {chip}
                   </button>
                 )
@@ -115,10 +115,10 @@ export default function OrderSummary({
               {notaEditando !== item.producto.id && (
                 <button
                   onClick={() => setNotaEditando(item.producto.id)}
-                  className="flex items-center gap-0.5 px-2 py-1 rounded-full text-[0.72rem] font-medium cursor-pointer"
-                  style={{ color: 'var(--brown)', border: '1px dashed var(--gold)' }}
+                  className="flex items-center justify-center gap-1 py-2.5 px-2 rounded-xl text-sm font-medium cursor-pointer transition-all active:scale-[0.97]"
+                  style={{ color: 'var(--brown)', border: '1px dashed var(--gold)', background: 'var(--bg-card)' }}
                 >
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
                   otra
                 </button>
               )}
