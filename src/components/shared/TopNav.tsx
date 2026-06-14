@@ -41,12 +41,8 @@ export default function TopNav() {
     >
       {/* Brand */}
       <Link href="/" className="flex items-center gap-3 flex-shrink-0">
-        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--gold)' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--espresso)" strokeWidth="2" strokeLinecap="round">
-            <path d="M17 8h1a4 4 0 0 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-            <line x1="6" y1="2" x2="6" y2="4" /><line x1="10" y1="2" x2="10" y2="4" /><line x1="14" y1="2" x2="14" y2="4" />
-          </svg>
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="Valeria's Coffee" style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: '50%' }} />
         <div className="hidden sm:block">
           <h1 style={{ color: '#FEF8F0', fontFamily: "'Playfair Display', serif", fontSize: '1.1rem', fontWeight: 600, lineHeight: 1.1 }}>
             Valeria&apos;s Coffee

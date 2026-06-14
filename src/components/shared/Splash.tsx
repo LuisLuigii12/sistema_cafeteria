@@ -30,14 +30,8 @@ export default function Splash() {
         pointerEvents: fade ? 'none' : 'auto',
       }}
     >
-      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="1.5" strokeLinecap="round">
-        <path d="M17 8h1a4 4 0 0 1 0 8h-1" />
-        <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-        <line x1="6" y1="2" x2="6" y2="4" /><line x1="10" y1="2" x2="10" y2="4" /><line x1="14" y1="2" x2="14" y2="4" />
-      </svg>
-      <p style={{ color: '#C9A96E', fontFamily: "'Playfair Display', serif", fontSize: '1.2rem', letterSpacing: '0.05em' }}>
-        Valeria&apos;s Coffee
-      </p>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.png" alt="Valeria's Coffee" style={{ width: 160, height: 160, objectFit: 'contain' }} />
       <div
         style={{
           width: '32px', height: '32px',
