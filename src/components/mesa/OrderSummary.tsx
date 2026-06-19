@@ -8,8 +8,8 @@ interface Props {
   carrito: ItemCarrito[]
   mesaNumero: number
   enviando: boolean
-  onActualizar: (productoId: string, cantidad: number) => void
-  onActualizarNota: (productoId: string, nota: string) => void
+  onActualizar: (itemId: string, cantidad: number) => void
+  onActualizarNota: (itemId: string, nota: string) => void
   onEnviar: () => void
   onLimpiar: () => void
 }
@@ -25,7 +25,15 @@ export default function OrderSummary({
 }: Props) {
   const [notaEditando, setNotaEditando] = useState<string | null>(null)
 
-  const total = carrito.reduce((sum, item) => sum + item.producto.precio * item.cantidad, 0)
+  function precioItem(item: ItemCarrito) {
+    return item.variante?.precio ?? item.producto.precio
+  }
+
+  function itemId(item: ItemCarrito) {
+    return item.variante?.id ?? item.producto.id
+  }
+
+  const total = carrito.reduce((sum, item) => sum + precioItem(item) * item.cantidad, 0)
   const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0)
 
   if (carrito.length === 0) {
@@ -86,12 +94,17 @@ export default function OrderSummary({
             {/* Línea 1: stepper + nombre + precio (compacto, tipo caja) */}
             <div className="flex items-center gap-2">
               <div className="inline-flex items-center rounded-lg overflow-hidden flex-shrink-0" style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
-                <button onClick={() => onActualizar(item.producto.id, item.cantidad - 1)} className="w-8 h-8 flex items-center justify-center text-lg leading-none cursor-pointer transition-colors hover:bg-[var(--gold-soft)]" style={{ color: 'var(--espresso)' }} aria-label="Quitar uno">−</button>
+                <button onClick={() => onActualizar(itemId(item), item.cantidad - 1)} className="w-8 h-8 flex items-center justify-center text-lg leading-none cursor-pointer transition-colors hover:bg-[var(--gold-soft)]" style={{ color: 'var(--espresso)' }} aria-label="Quitar uno">−</button>
                 <span className="w-6 text-center text-sm font-bold tabular-nums" style={{ color: 'var(--espresso)' }}>{item.cantidad}</span>
-                <button onClick={() => onActualizar(item.producto.id, item.cantidad + 1)} className="w-8 h-8 flex items-center justify-center text-lg leading-none cursor-pointer transition-colors hover:bg-[var(--gold-soft)]" style={{ color: 'var(--espresso)' }} aria-label="Agregar uno">+</button>
+                <button onClick={() => onActualizar(itemId(item), item.cantidad + 1)} className="w-8 h-8 flex items-center justify-center text-lg leading-none cursor-pointer transition-colors hover:bg-[var(--gold-soft)]" style={{ color: 'var(--espresso)' }} aria-label="Agregar uno">+</button>
               </div>
-              <p className="flex-1 text-sm font-bold leading-tight" style={{ color: 'var(--espresso)' }}>{item.producto.nombre}</p>
-              <p className="text-sm font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--espresso)' }}>${(item.producto.precio * item.cantidad).toFixed(2)}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold leading-tight" style={{ color: 'var(--espresso)' }}>{item.producto.nombre}</p>
+                {item.variante && (
+                  <p className="text-xs font-semibold mt-0.5" style={{ color: 'var(--gold)' }}>{item.variante.nombre}</p>
+                )}
+              </div>
+              <p className="text-sm font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--espresso)' }}>${(precioItem(item) * item.cantidad).toFixed(2)}</p>
             </div>
 
             {/* Línea 2: opciones — botones grandes y parejos (estándar POS: Square/Toast) */}
@@ -101,7 +114,7 @@ export default function OrderSummary({
                 return (
                   <button
                     key={chip}
-                    onClick={() => onActualizarNota(item.producto.id, alternarNota(item.notas, chip))}
+                    onClick={() => onActualizarNota(itemId(item), alternarNota(item.notas, chip))}
                     className="flex items-center justify-center gap-1 py-2.5 px-2 rounded-xl text-sm font-semibold cursor-pointer transition-all active:scale-[0.97]"
                     style={activo
                       ? { background: 'var(--gold)', color: 'var(--espresso)', boxShadow: 'var(--shadow-sm)' }
@@ -112,9 +125,9 @@ export default function OrderSummary({
                   </button>
                 )
               })}
-              {notaEditando !== item.producto.id && (
+              {notaEditando !== itemId(item) && (
                 <button
-                  onClick={() => setNotaEditando(item.producto.id)}
+                  onClick={() => setNotaEditando(itemId(item))}
                   className="flex items-center justify-center gap-1 py-2.5 px-2 rounded-xl text-sm font-medium cursor-pointer transition-all active:scale-[0.97]"
                   style={{ color: 'var(--brown)', border: '1px dashed var(--gold)', background: 'var(--bg-card)' }}
                 >
@@ -124,13 +137,13 @@ export default function OrderSummary({
               )}
             </div>
 
-            {notaEditando === item.producto.id && (
+            {notaEditando === itemId(item) && (
               <input
                 autoFocus
                 type="text"
                 placeholder="Escribe otra indicación..."
                 value={item.notas}
-                onChange={(e) => onActualizarNota(item.producto.id, e.target.value)}
+                onChange={(e) => onActualizarNota(itemId(item), e.target.value)}
                 onBlur={() => setNotaEditando(null)}
                 onKeyDown={(e) => { if (e.key === 'Enter') setNotaEditando(null) }}
                 className="mt-2 w-full text-xs rounded-lg px-3 py-2 outline-none transition-shadow focus:ring-2"

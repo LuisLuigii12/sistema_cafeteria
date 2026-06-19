@@ -17,6 +17,14 @@ export interface ProductoOpcion {
   created_at: string
 }
 
+export interface Variante {
+  id: string
+  producto_id: string
+  nombre: string
+  precio: number
+  orden: number
+}
+
 export interface Producto {
   id: string
   nombre: string
@@ -32,6 +40,7 @@ export interface Producto {
   preparacion: string | null
   categorias?: Categoria
   producto_opciones?: ProductoOpcion[]
+  variantes?: Variante[]
 }
 
 export type UnidadInsumo = 'kg' | 'g' | 'L' | 'ml' | 'pz'
@@ -107,6 +116,7 @@ export interface Ticket {
 
 export interface ItemCarrito {
   producto: Producto
+  variante?: Variante
   cantidad: number
   notas: string
 }

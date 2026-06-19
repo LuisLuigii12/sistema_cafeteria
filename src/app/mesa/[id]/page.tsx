@@ -8,7 +8,7 @@ import CategoryFilter from '@/components/mesa/CategoryFilter'
 import MenuGrid from '@/components/mesa/MenuGrid'
 import OrderSummary from '@/components/mesa/OrderSummary'
 import ActiveOrdersBanner from '@/components/mesa/ActiveOrdersBanner'
-import type { Categoria, Producto, Mesa, ItemCarrito, TipoDestino, Orden } from '@/types'
+import type { Categoria, Producto, Mesa, ItemCarrito, TipoDestino, Orden, Variante } from '@/types'
 
 export default function MesaPage() {
   const params = useParams()
@@ -28,18 +28,24 @@ export default function MesaPage() {
 
   useEffect(() => {
     async function cargarDatos() {
-      const [{ data: mesaData }, { data: catData }, { data: prodData }, { data: ordenesData }, opcRes] = await Promise.all([
+      const [{ data: mesaData }, { data: catData }, { data: prodData }, { data: ordenesData }, opcRes, varRes] = await Promise.all([
         supabase.from('mesas').select('*').eq('id', mesaId).single(),
         supabase.from('categorias').select('*').order('orden'),
         supabase.from('productos').select('*, categorias(*)').eq('disponible', true).order('nombre'),
         supabase.from('ordenes').select('*, orden_items(*, productos(nombre))').eq('mesa_id', mesaId).in('estado', ['pendiente', 'en_preparacion', 'listo']).order('created_at'),
         supabase.from('producto_opciones').select('*'),
+        supabase.from('variantes').select('*').order('orden'),
       ])
       if (mesaData) setMesa(mesaData)
       if (catData) setCategorias(catData)
       if (prodData) {
         const opciones = opcRes.data ?? []
-        setProductos(prodData.map((p) => ({ ...p, producto_opciones: opciones.filter((o) => o.producto_id === p.id) })))
+        const variantes = varRes.data ?? []
+        setProductos(prodData.map((p) => ({
+          ...p,
+          producto_opciones: opciones.filter((o) => o.producto_id === p.id),
+          variantes: variantes.filter((v) => v.producto_id === p.id),
+        })))
       }
       if (ordenesData) setOrdenesActivas(ordenesData)
       setLoading(false)
@@ -76,24 +82,29 @@ export default function MesaPage() {
     setTimeout(() => setToast(null), 3500)
   }
 
-  const agregarAlCarrito = useCallback((producto: Producto) => {
+  function getItemId(item: ItemCarrito) {
+    return item.variante?.id ?? item.producto.id
+  }
+
+  const agregarAlCarrito = useCallback((producto: Producto, variante?: Variante) => {
     setCarrito(prev => {
-      const existe = prev.find(i => i.producto.id === producto.id)
-      if (existe) return prev.map(i => i.producto.id === producto.id ? { ...i, cantidad: i.cantidad + 1 } : i)
-      return [...prev, { producto, cantidad: 1, notas: '' }]
+      const id = variante?.id ?? producto.id
+      const existe = prev.find(i => getItemId(i) === id)
+      if (existe) return prev.map(i => getItemId(i) === id ? { ...i, cantidad: i.cantidad + 1 } : i)
+      return [...prev, { producto, variante, cantidad: 1, notas: '' }]
     })
   }, [])
 
-  const actualizarCantidad = useCallback((productoId: string, cantidad: number) => {
+  const actualizarCantidad = useCallback((itemId: string, cantidad: number) => {
     if (cantidad <= 0) {
-      setCarrito(prev => prev.filter(i => i.producto.id !== productoId))
+      setCarrito(prev => prev.filter(i => getItemId(i) !== itemId))
     } else {
-      setCarrito(prev => prev.map(i => i.producto.id === productoId ? { ...i, cantidad } : i))
+      setCarrito(prev => prev.map(i => getItemId(i) === itemId ? { ...i, cantidad } : i))
     }
   }, [])
 
-  const actualizarNota = useCallback((productoId: string, nota: string) => {
-    setCarrito(prev => prev.map(i => i.producto.id === productoId ? { ...i, notas: nota } : i))
+  const actualizarNota = useCallback((itemId: string, nota: string) => {
+    setCarrito(prev => prev.map(i => getItemId(i) === itemId ? { ...i, notas: nota } : i))
   }, [])
 
   async function enviarOrden() {
@@ -106,7 +117,8 @@ export default function MesaPage() {
       if (itemsCocina.length > 0)    grupos.push({ destino: 'cocina',    items: itemsCocina })
 
       for (const grupo of grupos) {
-        const total = grupo.items.reduce((s, i) => s + i.producto.precio * i.cantidad, 0)
+        const precioItem = (i: ItemCarrito) => i.variante?.precio ?? i.producto.precio
+        const total = grupo.items.reduce((s, i) => s + precioItem(i) * i.cantidad, 0)
 
         const { data: orden, error } = await supabase
           .from('ordenes')
@@ -117,13 +129,16 @@ export default function MesaPage() {
         if (error || !orden) throw error
 
         await supabase.from('orden_items').insert(
-          grupo.items.map(i => ({
-            orden_id: orden.id,
-            producto_id: i.producto.id,
-            cantidad: i.cantidad,
-            precio_unitario: i.producto.precio,
-            notas: i.notas || null,
-          }))
+          grupo.items.map(i => {
+            const partes = [i.variante?.nombre, i.notas].filter(Boolean)
+            return {
+              orden_id: orden.id,
+              producto_id: i.producto.id,
+              cantidad: i.cantidad,
+              precio_unitario: precioItem(i),
+              notas: partes.length > 0 ? partes.join(', ') : null,
+            }
+          })
         )
       }
 
