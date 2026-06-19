@@ -20,6 +20,12 @@ export default function MesaPage() {
   const [productos, setProductos] = useState<Producto[]>([])
   const [seccion, setSeccion] = useState<TipoDestino>('cafeteria')
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null)
+
+  // Auto-seleccionar primera categoría cuando cambian las categorías o la sección
+  useEffect(() => {
+    const primera = categorias.find(c => c.tipo === seccion)
+    if (primera && !categoriaActiva) setCategoriaActiva(primera.id)
+  }, [categorias, seccion]) // eslint-disable-line react-hooks/exhaustive-deps
   const [carrito, setCarrito] = useState<ItemCarrito[]>([])
   const [ordenesActivas, setOrdenesActivas] = useState<Orden[]>([])
   const [enviando, setEnviando] = useState(false)
@@ -60,17 +66,17 @@ export default function MesaPage() {
     return () => { supabase.removeChannel(channel) }
   }, [mesaId])
 
-  // Al cambiar sección, limpiar categoría activa
   function cambiarSeccion(s: TipoDestino) {
     setSeccion(s)
-    setCategoriaActiva(null)
+    const primera = categorias.find(c => c.tipo === s)
+    setCategoriaActiva(primera?.id ?? null)
   }
 
   const categoriasFiltradas = categorias.filter(c => c.tipo === seccion)
 
   const productosFiltrados = productos.filter(p => {
     const esDeLaSeccion = p.categorias?.tipo === seccion
-    const esDeLaCategoria = categoriaActiva ? p.categoria_id === categoriaActiva : true
+    const esDeLaCategoria = categoriaActiva ? p.categoria_id === categoriaActiva : p.categorias?.tipo === seccion
     return esDeLaSeccion && esDeLaCategoria
   })
 
