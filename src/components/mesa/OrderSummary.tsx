@@ -98,10 +98,24 @@ export default function OrderSummary({
                 )}
               </div>
 
-              {/* Precio total del ítem */}
-              <p className="text-sm font-bold tabular-nums whitespace-nowrap flex-shrink-0" style={{ color: 'var(--espresso)' }}>
-                {formatMoney(precioItem(item) * item.cantidad)}
-              </p>
+              {/* Precio + botón para quitar el artículo */}
+              <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                <p className="text-sm font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--espresso)' }}>
+                  {formatMoney(precioItem(item) * item.cantidad)}
+                </p>
+                <button
+                  onClick={() => onActualizar(item.carritoKey, 0)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer transition-transform active:scale-90"
+                  style={{ background: 'var(--red-soft)', color: 'var(--red)' }}
+                  aria-label={`Quitar ${item.producto.nombre}`}
+                  title="Quitar este artículo"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                    <line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* Extras seleccionados */}
