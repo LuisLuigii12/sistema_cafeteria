@@ -8,7 +8,7 @@ import CategoryFilter from '@/components/mesa/CategoryFilter'
 import MenuGrid from '@/components/mesa/MenuGrid'
 import OrderSummary from '@/components/mesa/OrderSummary'
 import ActiveOrdersBanner from '@/components/mesa/ActiveOrdersBanner'
-import type { Categoria, Producto, Mesa, ItemCarrito, TipoDestino, Orden, Variante } from '@/types'
+import type { Categoria, Producto, Mesa, ItemCarrito, TipoDestino, Orden, Variante, Extra } from '@/types'
 
 export default function MesaPage() {
   const params = useParams()
@@ -72,7 +72,7 @@ export default function MesaPage() {
     setCategoriaActiva(primera?.id ?? null)
   }
 
-  const categoriasFiltradas = categorias.filter(c => c.tipo === seccion)
+  const categoriasFiltradas = categorias.filter(c => c.tipo === seccion && c.nombre !== 'Extras')
 
   const productosFiltrados = productos.filter(p => {
     const esDeLaSeccion = p.categorias?.tipo === seccion
@@ -88,29 +88,25 @@ export default function MesaPage() {
     setTimeout(() => setToast(null), 3500)
   }
 
-  function getItemId(item: ItemCarrito) {
-    return item.variante?.id ?? item.producto.id
+  function makeKey(productoId: string, varianteId?: string, extras: Extra[] = []) {
+    return `${productoId}|${varianteId ?? ''}|${extras.map(e => e.nombre).sort().join(',')}`
   }
 
-  const agregarAlCarrito = useCallback((producto: Producto, variante?: Variante) => {
+  const agregarAlCarrito = useCallback((producto: Producto, variante?: Variante, extras: Extra[] = []) => {
+    const key = makeKey(producto.id, variante?.id, extras)
     setCarrito(prev => {
-      const id = variante?.id ?? producto.id
-      const existe = prev.find(i => getItemId(i) === id)
-      if (existe) return prev.map(i => getItemId(i) === id ? { ...i, cantidad: i.cantidad + 1 } : i)
-      return [...prev, { producto, variante, cantidad: 1, notas: '' }]
+      const existe = prev.find(i => i.carritoKey === key)
+      if (existe) return prev.map(i => i.carritoKey === key ? { ...i, cantidad: i.cantidad + 1 } : i)
+      return [...prev, { carritoKey: key, producto, variante, extras, cantidad: 1 }]
     })
   }, [])
 
-  const actualizarCantidad = useCallback((itemId: string, cantidad: number) => {
+  const actualizarCantidad = useCallback((carritoKey: string, cantidad: number) => {
     if (cantidad <= 0) {
-      setCarrito(prev => prev.filter(i => getItemId(i) !== itemId))
+      setCarrito(prev => prev.filter(i => i.carritoKey !== carritoKey))
     } else {
-      setCarrito(prev => prev.map(i => getItemId(i) === itemId ? { ...i, cantidad } : i))
+      setCarrito(prev => prev.map(i => i.carritoKey === carritoKey ? { ...i, cantidad } : i))
     }
-  }, [])
-
-  const actualizarNota = useCallback((itemId: string, nota: string) => {
-    setCarrito(prev => prev.map(i => getItemId(i) === itemId ? { ...i, notas: nota } : i))
   }, [])
 
   async function enviarOrden() {
@@ -123,7 +119,10 @@ export default function MesaPage() {
       if (itemsCocina.length > 0)    grupos.push({ destino: 'cocina',    items: itemsCocina })
 
       for (const grupo of grupos) {
-        const precioItem = (i: ItemCarrito) => i.variante?.precio ?? i.producto.precio
+        const precioItem = (i: ItemCarrito) => {
+          const base = i.variante?.precio ?? i.producto.precio
+          return base + i.extras.reduce((s, e) => s + e.precio, 0)
+        }
         const total = grupo.items.reduce((s, i) => s + precioItem(i) * i.cantidad, 0)
 
         const { data: orden, error } = await supabase
@@ -136,13 +135,16 @@ export default function MesaPage() {
 
         await supabase.from('orden_items').insert(
           grupo.items.map(i => {
-            const partes = [i.variante?.nombre, i.notas].filter(Boolean)
+            const partes = [
+              i.variante?.nombre,
+              i.extras.map(e => e.nombre).join(', '),
+            ].filter(Boolean)
             return {
               orden_id: orden.id,
               producto_id: i.producto.id,
               cantidad: i.cantidad,
               precio_unitario: precioItem(i),
-              notas: partes.length > 0 ? partes.join(', ') : null,
+              notas: partes.length > 0 ? partes.join(' · ') : null,
             }
           })
         )
@@ -274,7 +276,6 @@ export default function MesaPage() {
               mesaNumero={mesa.numero}
               enviando={enviando}
               onActualizar={actualizarCantidad}
-              onActualizarNota={actualizarNota}
               onEnviar={enviarOrden}
               onLimpiar={() => setCarrito([])}
             />

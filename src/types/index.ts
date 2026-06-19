@@ -25,6 +25,11 @@ export interface Variante {
   orden: number
 }
 
+export interface Extra {
+  nombre: string
+  precio: number
+}
+
 export interface Producto {
   id: string
   nombre: string
@@ -115,8 +120,9 @@ export interface Ticket {
 }
 
 export interface ItemCarrito {
+  carritoKey: string
   producto: Producto
   variante?: Variante
+  extras: Extra[]
   cantidad: number
-  notas: string
 }
