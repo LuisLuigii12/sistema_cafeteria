@@ -40,12 +40,6 @@ export default function ActiveOrdersBanner({ ordenes, productos }: Props) {
     }, 0)
   }
 
-  async function entregar(id: string) {
-    setTrabajando(id)
-    await supabase.from('ordenes').update({ estado: 'entregado' }).eq('id', id)
-    setTrabajando(null)
-  }
-
   async function cambiarCantidad(orden: Orden, item: OrdenItem, nuevaCantidad: number) {
     if (nuevaCantidad <= 0) return quitar(orden, item)
     setTrabajando(item.id)
@@ -184,18 +178,6 @@ export default function ActiveOrdersBanner({ ordenes, productos }: Props) {
                     )
                   })}
                 </div>
-
-                {orden.estado === 'listo' && (
-                  <button
-                    onClick={() => entregar(orden.id)}
-                    disabled={trabajando === orden.id}
-                    className="mt-2 w-full py-2 rounded-lg text-xs font-bold cursor-pointer transition-all hover:brightness-110 active:scale-[0.99] flex items-center justify-center gap-1.5 disabled:opacity-50"
-                    style={{ background: '#16A34A', color: '#F0FDF4' }}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
-                    {trabajando === orden.id ? 'Entregando...' : 'Marcar entregado'}
-                  </button>
-                )}
               </div>
             )
           })}
