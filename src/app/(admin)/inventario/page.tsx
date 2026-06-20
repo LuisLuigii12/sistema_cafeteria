@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import TopNav from '@/components/shared/TopNav'
 import ProductoRow from '@/components/inventario/ProductoRow'
+import ProductoMenuRow from '@/components/inventario/ProductoMenuRow'
 import EditarProductoModal from '@/components/inventario/EditarProductoModal'
 import NuevoProductoModal from '@/components/inventario/NuevoProductoModal'
 import InsumosPanel from '@/components/inventario/InsumosPanel'
@@ -21,16 +22,22 @@ export default function InventarioPage() {
   const [filtro, setFiltro] = useState<'todos' | 'bajo' | 'agotado'>('todos')
   const [editando, setEditando] = useState<Producto | null>(null)
   const [creando, setCreando] = useState(false)
-  const [vista, setVista] = useState<'venta' | 'insumos'>('venta')
+  const [vista, setVista] = useState<'venta' | 'menu' | 'insumos'>('venta')
 
   async function fetchProductos() {
     const { data } = await supabase
       .from('productos')
       .select('*, categorias(nombre)')
       .order('nombre')
-    if (data) setProductos(data.filter((p) => CATEGORIAS_INVENTARIO.includes(p.categorias?.nombre ?? '')))
+    if (data) setProductos(data)
     setLoading(false)
   }
+
+  // Inventario (conteo de piezas) = solo Vitrina/Otros. El Menú edita TODOS.
+  const inventariables = useMemo(
+    () => productos.filter((p) => CATEGORIAS_INVENTARIO.includes(p.categorias?.nombre ?? '')),
+    [productos],
+  )
 
   useEffect(() => {
     fetchProductos()
@@ -43,20 +50,29 @@ export default function InventarioPage() {
   }, [])
 
   const stats = useMemo(() => {
-    const valor = productos.reduce((s, p) => s + p.costo * p.stock, 0)
-    const bajos = productos.filter((p) => p.stock > 0 && p.stock <= p.stock_minimo).length
-    const agotados = productos.filter((p) => p.stock <= 0).length
-    return { total: productos.length, valor, bajos, agotados }
-  }, [productos])
+    const valor = inventariables.reduce((s, p) => s + p.costo * p.stock, 0)
+    const bajos = inventariables.filter((p) => p.stock > 0 && p.stock <= p.stock_minimo).length
+    const agotados = inventariables.filter((p) => p.stock <= 0).length
+    return { total: inventariables.length, valor, bajos, agotados }
+  }, [inventariables])
 
   const visibles = useMemo(() => {
-    return productos.filter((p) => {
+    return inventariables.filter((p) => {
       if (busqueda && !p.nombre.toLowerCase().includes(busqueda.toLowerCase())) return false
       if (filtro === 'bajo') return p.stock > 0 && p.stock <= p.stock_minimo
       if (filtro === 'agotado') return p.stock <= 0
       return true
     })
-  }, [productos, busqueda, filtro])
+  }, [inventariables, busqueda, filtro])
+
+  // Menú: TODOS los productos agrupados por categoría (para editar precio/receta/opciones…).
+  const menu = useMemo(() => {
+    const q = busqueda.trim().toLowerCase()
+    const filtrados = q ? productos.filter((p) => p.nombre.toLowerCase().includes(q)) : productos
+    return categorias
+      .map((c) => ({ categoria: c, items: filtrados.filter((p) => p.categoria_id === c.id) }))
+      .filter((g) => g.items.length > 0)
+  }, [productos, categorias, busqueda])
 
   async function ajustarStock(id: string, delta: number) {
     const prod = productos.find((p) => p.id === id)
@@ -96,11 +112,13 @@ export default function InventarioPage() {
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: 2 }}>
               {vista === 'venta'
-                ? 'Solo productos que se cuentan por pieza (Vitrina y Otros)'
+                ? 'Conteo por pieza (Vitrina y Otros) — el stock baja solo al vender'
+                : vista === 'menu'
+                ? 'Edita cualquier producto: precio, receta, opciones y disponibilidad'
                 : 'Materia prima para preparar — no aparece en el menú de venta'}
             </p>
           </div>
-          {vista === 'venta' && (
+          {vista !== 'insumos' && (
             <button
               onClick={() => setCreando(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all hover:brightness-105 active:scale-[0.98] flex-shrink-0"
@@ -113,9 +131,9 @@ export default function InventarioPage() {
           )}
         </div>
 
-        {/* Tabs Venta / Insumos */}
+        {/* Tabs Inventario / Menú / Insumos */}
         <div className="flex gap-1.5 p-1 rounded-xl mb-6 w-fit" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          {([['venta', 'Productos de venta'], ['insumos', 'Insumos']] as const).map(([val, label]) => (
+          {([['venta', 'Inventario'], ['menu', 'Menú'], ['insumos', 'Insumos']] as const).map(([val, label]) => (
             <button
               key={val}
               onClick={() => setVista(val)}
@@ -206,6 +224,48 @@ export default function InventarioPage() {
           </div>
         )}
         </>
+        )}
+
+        {vista === 'menu' && (
+          <>
+            {/* Buscador */}
+            <div className="relative mb-5">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Buscar producto..."
+                className="w-full pl-10 pr-3 py-2.5 rounded-xl text-sm outline-none"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--espresso)' }}
+              />
+            </div>
+
+            {loading ? (
+              <div className="space-y-2">
+                {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-16 rounded-2xl animate-pulse" style={{ background: '#E8D5BB' }} />)}
+              </div>
+            ) : menu.length === 0 ? (
+              <div className="text-center py-16" style={{ color: 'var(--text-muted)' }}><p>No hay productos que coincidan</p></div>
+            ) : (
+              <div className="space-y-6">
+                {menu.map(({ categoria, items }) => (
+                  <div key={categoria.id}>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <h3 className="text-sm font-bold" style={{ color: 'var(--espresso)' }}>{categoria.nombre}</h3>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full tabular-nums" style={{ background: 'var(--gold-soft)', color: 'var(--brown)' }}>{items.length}</span>
+                    </div>
+                    <div className="space-y-2">
+                      {items.map((p) => (
+                        <ProductoMenuRow key={p.id} producto={p} onEditar={setEditando} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {vista === 'insumos' && <InsumosPanel />}
