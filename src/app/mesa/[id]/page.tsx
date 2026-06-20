@@ -8,6 +8,7 @@ import CategoryFilter from '@/components/mesa/CategoryFilter'
 import MenuGrid from '@/components/mesa/MenuGrid'
 import OrderSummary from '@/components/mesa/OrderSummary'
 import ActiveOrdersBanner from '@/components/mesa/ActiveOrdersBanner'
+import { precioUnitario, buildNotas } from '@/lib/opciones'
 import type { Categoria, Producto, Mesa, ItemCarrito, TipoDestino, Orden, Variante, Extra } from '@/types'
 
 export default function MesaPage() {
@@ -119,11 +120,7 @@ export default function MesaPage() {
       if (itemsCocina.length > 0)    grupos.push({ destino: 'cocina',    items: itemsCocina })
 
       for (const grupo of grupos) {
-        const precioItem = (i: ItemCarrito) => {
-          const base = i.variante?.precio ?? i.producto.precio
-          return base + i.extras.reduce((s, e) => s + e.precio, 0)
-        }
-        const total = grupo.items.reduce((s, i) => s + precioItem(i) * i.cantidad, 0)
+        const total = grupo.items.reduce((s, i) => s + precioUnitario(i.producto, i.variante, i.extras) * i.cantidad, 0)
 
         const { data: orden, error } = await supabase
           .from('ordenes')
@@ -134,19 +131,13 @@ export default function MesaPage() {
         if (error || !orden) throw error
 
         await supabase.from('orden_items').insert(
-          grupo.items.map(i => {
-            const partes = [
-              i.variante?.nombre,
-              i.extras.map(e => e.nombre).join(', '),
-            ].filter(Boolean)
-            return {
-              orden_id: orden.id,
-              producto_id: i.producto.id,
-              cantidad: i.cantidad,
-              precio_unitario: precioItem(i),
-              notas: partes.length > 0 ? partes.join(' · ') : null,
-            }
-          })
+          grupo.items.map(i => ({
+            orden_id: orden.id,
+            producto_id: i.producto.id,
+            cantidad: i.cantidad,
+            precio_unitario: precioUnitario(i.producto, i.variante, i.extras),
+            notas: buildNotas(i.variante, i.extras),
+          }))
         )
       }
 
@@ -226,7 +217,7 @@ export default function MesaPage() {
         </div>
 
         {/* Banner órdenes activas */}
-        <ActiveOrdersBanner ordenes={ordenesActivas} />
+        <ActiveOrdersBanner ordenes={ordenesActivas} productos={productos} />
 
         {/* Section selector */}
         <SectionSelector
