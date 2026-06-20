@@ -10,6 +10,9 @@ import InsumosPanel from '@/components/inventario/InsumosPanel'
 import { formatMoneyShort } from '@/lib/format'
 import type { Producto, Categoria } from '@/types'
 
+// Inventario solo lleva productos que se cuentan por pieza (no los que se hacen al momento).
+const CATEGORIAS_INVENTARIO = ['Vitrina', 'Otros']
+
 export default function InventarioPage() {
   const [productos, setProductos] = useState<Producto[]>([])
   const [categorias, setCategorias] = useState<Categoria[]>([])
@@ -25,7 +28,7 @@ export default function InventarioPage() {
       .from('productos')
       .select('*, categorias(nombre)')
       .order('nombre')
-    if (data) setProductos(data)
+    if (data) setProductos(data.filter((p) => CATEGORIAS_INVENTARIO.includes(p.categorias?.nombre ?? '')))
     setLoading(false)
   }
 
@@ -93,7 +96,7 @@ export default function InventarioPage() {
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: 2 }}>
               {vista === 'venta'
-                ? 'El stock baja solo cada vez que se vende un producto'
+                ? 'Solo productos que se cuentan por pieza (Vitrina y Otros)'
                 : 'Materia prima para preparar — no aparece en el menú de venta'}
             </p>
           </div>
