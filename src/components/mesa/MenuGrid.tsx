@@ -60,10 +60,10 @@ export default function MenuGrid({ productos, carrito, onAgregar }: Props) {
                 opacity: noDisponible ? 0.55 : 1,
               }}
             >
-              <div className="relative aspect-[4/3] w-full overflow-hidden" style={{ background: tema.soft }}>
+              <div className="relative aspect-square w-full overflow-hidden" style={{ background: tema.soft }}>
                 {producto.imagen_url ? (
                   <img src={producto.imagen_url} alt={producto.nombre}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                    className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
                     style={{ color: tema.color, background: `linear-gradient(135deg, ${tema.soft}, ${tema.color}22)` }}>
