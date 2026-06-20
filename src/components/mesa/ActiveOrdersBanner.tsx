@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { precioUnitario, buildNotas, parseNotas } from '@/lib/opciones'
-import { recalcularEstadoMesa } from '@/lib/mesaEstado'
 import OpcionesModal from '@/components/mesa/OpcionesModal'
 import type { Orden, OrdenItem, Producto, Variante, Extra } from '@/types'
 
@@ -41,11 +40,9 @@ export default function ActiveOrdersBanner({ ordenes, productos }: Props) {
     }, 0)
   }
 
-  async function entregar(orden: Orden) {
-    setTrabajando(orden.id)
-    await supabase.from('ordenes').update({ estado: 'entregado' }).eq('id', orden.id)
-    // Si ya nada está en preparación, la mesa pasa a "Por cobrar".
-    await recalcularEstadoMesa(orden.mesa_id)
+  async function entregar(id: string) {
+    setTrabajando(id)
+    await supabase.from('ordenes').update({ estado: 'entregado' }).eq('id', id)
     setTrabajando(null)
   }
 
@@ -190,7 +187,7 @@ export default function ActiveOrdersBanner({ ordenes, productos }: Props) {
 
                 {orden.estado === 'listo' && (
                   <button
-                    onClick={() => entregar(orden)}
+                    onClick={() => entregar(orden.id)}
                     disabled={trabajando === orden.id}
                     className="mt-2 w-full py-2 rounded-lg text-xs font-bold cursor-pointer transition-all hover:brightness-110 active:scale-[0.99] flex items-center justify-center gap-1.5 disabled:opacity-50"
                     style={{ background: '#16A34A', color: '#F0FDF4' }}
