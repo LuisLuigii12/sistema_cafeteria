@@ -95,6 +95,7 @@ export default function MesasGrid() {
     const listo = !admin && (listosPorMesa[mesa.id] ?? 0) > 0
     const activas = !admin && (ordenesActivas[mesa.id] ?? 0) > 0
     const mostrarCobrar = !admin && (cobrablePorMesa[mesa.id] ?? false)
+    const mostrarVerOrden = !admin && !mostrarCobrar && mesa.estado !== 'libre'
 
     return (
       <div
@@ -156,6 +157,20 @@ export default function MesasGrid() {
               <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
             Cobrar
+          </button>
+        )}
+
+        {/* Ver orden — mesa ocupada, todavía en preparación */}
+        {mostrarVerOrden && (
+          <button
+            onClick={() => router.push(`/mesa/${mesa.id}`)}
+            className="flex items-center justify-center gap-1.5 py-2.5 text-sm font-bold cursor-pointer transition-all hover:brightness-110 active:scale-[0.99] flex-shrink-0"
+            style={{ background: 'var(--espresso)', color: '#FEF8F0' }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
+            </svg>
+            Ver orden
           </button>
         )}
       </div>

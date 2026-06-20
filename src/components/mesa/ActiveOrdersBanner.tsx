@@ -126,20 +126,26 @@ export default function ActiveOrdersBanner({ ordenes, productos }: Props) {
                   </span>
                 </div>
 
-                {/* Productos editables uno por uno */}
+                {/* Productos: se pueden corregir/quitar solo si AÚN no están "Listo" */}
                 <div className="space-y-1.5">
                   {items.map((item) => {
                     const prod = productoDe(item)
                     const tieneVariantes = (prod?.variantes ?? []).length > 0
                     const ocupado = trabajando === item.id
+                    const puedeEditar = orden.estado !== 'listo'
                     return (
                       <div key={item.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5" style={{ background: 'rgba(255,255,255,0.04)', opacity: ocupado ? 0.5 : 1 }}>
-                        {/* Stepper cantidad */}
-                        <div className="inline-flex items-center rounded-lg overflow-hidden flex-shrink-0" style={{ border: '1px solid rgba(201,169,110,0.3)' }}>
-                          <button onClick={() => cambiarCantidad(orden, item, item.cantidad - 1)} disabled={ocupado} className="w-7 h-7 flex items-center justify-center text-lg leading-none cursor-pointer disabled:cursor-not-allowed" style={{ color: '#FEF8F0' }}>−</button>
-                          <span className="w-6 text-center text-sm font-bold tabular-nums" style={{ color: '#FEF8F0' }}>{item.cantidad}</span>
-                          <button onClick={() => cambiarCantidad(orden, item, item.cantidad + 1)} disabled={ocupado} className="w-7 h-7 flex items-center justify-center text-lg leading-none cursor-pointer disabled:cursor-not-allowed" style={{ color: '#FEF8F0' }}>+</button>
-                        </div>
+                        {puedeEditar ? (
+                          // Stepper de cantidad (aún se puede ajustar)
+                          <div className="inline-flex items-center rounded-lg overflow-hidden flex-shrink-0" style={{ border: '1px solid rgba(201,169,110,0.3)' }}>
+                            <button onClick={() => cambiarCantidad(orden, item, item.cantidad - 1)} disabled={ocupado} className="w-7 h-7 flex items-center justify-center text-lg leading-none cursor-pointer disabled:cursor-not-allowed" style={{ color: '#FEF8F0' }}>−</button>
+                            <span className="w-6 text-center text-sm font-bold tabular-nums" style={{ color: '#FEF8F0' }}>{item.cantidad}</span>
+                            <button onClick={() => cambiarCantidad(orden, item, item.cantidad + 1)} disabled={ocupado} className="w-7 h-7 flex items-center justify-center text-lg leading-none cursor-pointer disabled:cursor-not-allowed" style={{ color: '#FEF8F0' }}>+</button>
+                          </div>
+                        ) : (
+                          // Cantidad de solo lectura (ya preparado)
+                          <span className="flex-shrink-0 w-9 h-7 rounded-lg flex items-center justify-center text-sm font-bold tabular-nums" style={{ background: 'rgba(34,197,94,0.15)', color: '#22C55E' }}>{item.cantidad}×</span>
+                        )}
 
                         {/* Nombre + tamaño/extras */}
                         <div className="flex-1 min-w-0">
@@ -147,8 +153,8 @@ export default function ActiveOrdersBanner({ ordenes, productos }: Props) {
                           {item.notas && <p className="text-xs leading-tight truncate" style={{ color: '#C9A96E' }}>{item.notas}</p>}
                         </div>
 
-                        {/* Acciones */}
-                        {tieneVariantes && prod && (
+                        {/* Acciones — solo mientras NO esté listo */}
+                        {puedeEditar && tieneVariantes && prod && (
                           <button
                             onClick={() => setEditando({ orden, item, producto: prod })}
                             disabled={ocupado}
@@ -161,23 +167,31 @@ export default function ActiveOrdersBanner({ ordenes, productos }: Props) {
                             Cambiar
                           </button>
                         )}
-                        <button
-                          onClick={() => quitar(orden, item)}
-                          disabled={ocupado}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer flex-shrink-0 disabled:cursor-not-allowed active:scale-90"
-                          style={{ background: 'rgba(239,68,68,0.15)', color: '#FCA5A5' }}
-                          aria-label={`Quitar ${item.productos?.nombre}`}
-                          title="Quitar este producto"
-                        >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                            <line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
-                          </svg>
-                        </button>
+                        {puedeEditar && (
+                          <button
+                            onClick={() => quitar(orden, item)}
+                            disabled={ocupado}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer flex-shrink-0 disabled:cursor-not-allowed active:scale-90"
+                            style={{ background: 'rgba(239,68,68,0.15)', color: '#FCA5A5' }}
+                            aria-label={`Quitar ${item.productos?.nombre}`}
+                            title="Quitar este producto"
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                              <line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     )
                   })}
                 </div>
+                {orden.estado === 'listo' && (
+                  <p className="text-[0.68rem] mt-2 flex items-center gap-1.5" style={{ color: 'rgba(254,248,240,0.4)' }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                    Ya preparado · no se puede cambiar
+                  </p>
+                )}
               </div>
             )
           })}
