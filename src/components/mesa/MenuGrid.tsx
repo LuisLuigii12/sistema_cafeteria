@@ -5,6 +5,8 @@ import { useState } from 'react'
 import { temaCategoria, CategoriaIcon } from '@/components/shared/categoria'
 import { formatMoney } from '@/lib/format'
 import OpcionesModal from '@/components/mesa/OpcionesModal'
+import OpcionesCocinaModal from '@/components/mesa/OpcionesCocinaModal'
+import { OPCIONES_COCINA } from '@/lib/opciones-cocina'
 import type { Producto, ItemCarrito, Variante, Extra } from '@/types'
 
 interface Props {
@@ -15,6 +17,7 @@ interface Props {
 
 export default function MenuGrid({ productos, carrito, onAgregar }: Props) {
   const [picker, setPicker] = useState<Producto | null>(null)
+  const [pickerCocina, setPickerCocina] = useState<Producto | null>(null)
 
   function cantidadEnCarrito(productoId: string) {
     return carrito
@@ -50,7 +53,11 @@ export default function MenuGrid({ productos, carrito, onAgregar }: Props) {
             <button
               key={producto.id}
               disabled={noDisponible}
-              onClick={() => tieneVariantes ? setPicker(producto) : onAgregar(producto)}
+              onClick={() => {
+                if (tieneVariantes) setPicker(producto)
+                else if (OPCIONES_COCINA[producto.nombre]) setPickerCocina(producto)
+                else onAgregar(producto)
+              }}
               className="group relative text-left rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer flex flex-col animate-in disabled:cursor-not-allowed enabled:hover:-translate-y-1 enabled:active:translate-y-0"
               style={{
                 animationDelay: `${Math.min(i * 25, 250)}ms`,
@@ -113,7 +120,7 @@ export default function MenuGrid({ productos, carrito, onAgregar }: Props) {
         })}
       </div>
 
-      {/* ── Modal de tamaño + extras ── */}
+      {/* ── Modal de tamaño + extras (cafetería) ── */}
       {picker && (
         <OpcionesModal
           producto={picker}
@@ -122,6 +129,19 @@ export default function MenuGrid({ productos, carrito, onAgregar }: Props) {
             setPicker(null)
           }}
           onCerrar={() => setPicker(null)}
+        />
+      )}
+
+      {/* ── Modal de opciones cocina (crepas / huevo) ── */}
+      {pickerCocina && OPCIONES_COCINA[pickerCocina.nombre] && (
+        <OpcionesCocinaModal
+          producto={pickerCocina}
+          tipo={OPCIONES_COCINA[pickerCocina.nombre]}
+          onConfirmar={(extras) => {
+            onAgregar(pickerCocina, undefined, extras)
+            setPickerCocina(null)
+          }}
+          onCerrar={() => setPickerCocina(null)}
         />
       )}
     </>
