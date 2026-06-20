@@ -28,7 +28,8 @@ export default function FinanzasPage() {
       supabase
         .from('ordenes')
         .select('id, total, created_at, estado, orden_items(cantidad, precio_unitario, productos(nombre, costo))')
-        .neq('estado', 'cancelado')
+        // Solo lo realmente COBRADO cuenta como venta/ingreso (así cuadra con Ventas).
+        .eq('pagado', true)
         .order('created_at', { ascending: false }),
       supabase.from('gastos').select('*').order('created_at', { ascending: false }),
     ])

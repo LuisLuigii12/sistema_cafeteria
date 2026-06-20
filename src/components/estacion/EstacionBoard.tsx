@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { recalcularEstadoMesa } from '@/lib/mesaEstado'
 import type { Orden, TipoDestino } from '@/types'
 
 interface Props {
@@ -37,7 +38,7 @@ export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
   const [ahora, setAhora] = useState(() => Date.now())
   const [sonido, setSonido] = useState(false)
   const [flash, setFlash] = useState(false)
-  const [deshacer, setDeshacer] = useState<{ id: string; mesa?: number } | null>(null)
+  const [deshacer, setDeshacer] = useState<{ id: string; mesa?: number; mesaId: string } | null>(null)
   const [recetas, setRecetas] = useState<Record<string, { ingredientes: string | null; preparacion: string | null }>>({})
   const prevIds = useRef<Set<string> | null>(null)
   const audioRef = useRef<AudioContext | null>(null)
@@ -122,16 +123,19 @@ export default function EstacionBoard({ destino, titulo, subtitulo }: Props) {
 
   async function marcarListo(orden: Orden) {
     setOrdenes((prev) => prev.filter((o) => o.id !== orden.id))
-    setDeshacer({ id: orden.id, mesa: orden.mesas?.numero })
+    setDeshacer({ id: orden.id, mesa: orden.mesas?.numero, mesaId: orden.mesa_id })
     setTimeout(() => setDeshacer((d) => (d?.id === orden.id ? null : d)), 8000)
     await supabase.from('ordenes').update({ estado: 'listo' }).eq('id', orden.id)
+    // Si a la mesa ya no le queda nada en preparación, pasa a "Por cobrar".
+    await recalcularEstadoMesa(orden.mesa_id)
   }
 
   async function deshacerListo() {
     if (!deshacer) return
-    const id = deshacer.id
+    const { id, mesaId } = deshacer
     setDeshacer(null)
     await supabase.from('ordenes').update({ estado: 'pendiente' }).eq('id', id)
+    await recalcularEstadoMesa(mesaId)
     fetchOrdenes()
   }
 
