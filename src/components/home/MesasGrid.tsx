@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import MesaModal from '@/components/home/MesaModal'
 import CobrarModal from '@/components/mesa/CobrarModal'
+import VerOrdenModal from '@/components/home/VerOrdenModal'
 import type { Mesa, EstadoMesa } from '@/types'
 
 const ESTADO: Record<EstadoMesa, { label: string; accent: string; badge: string; badgeText: string; hint: string }> = {
@@ -22,6 +23,7 @@ export default function MesasGrid() {
   const [loading, setLoading] = useState(true)
   const [admin] = useState(false)
   const [cobrando, setCobrando] = useState<Mesa | null>(null)
+  const [verOrden, setVerOrden] = useState<Mesa | null>(null)
   const [editando, setEditando] = useState<Mesa | null>(null)
   const [creando, setCreando] = useState(false)
 
@@ -112,7 +114,11 @@ export default function MesasGrid() {
 
         {/* Cuerpo: toca para ordenar (o editar en modo admin) */}
         <div
-          onClick={() => (admin ? setEditando(mesa) : router.push(`/mesa/${mesa.id}`))}
+          onClick={() => {
+            if (admin) { setEditando(mesa); return }
+            if (mesa.estado === 'libre') router.push(`/mesa/${mesa.id}`)
+            else setVerOrden(mesa)
+          }}
           className="relative flex-1 p-5 flex flex-col cursor-pointer"
         >
           <div className="flex items-start justify-between gap-2">
@@ -163,7 +169,7 @@ export default function MesasGrid() {
         {/* Ver orden — mesa ocupada, todavía en preparación */}
         {mostrarVerOrden && (
           <button
-            onClick={() => router.push(`/mesa/${mesa.id}`)}
+            onClick={() => setVerOrden(mesa)}
             className="flex items-center justify-center gap-1.5 py-2.5 text-sm font-bold cursor-pointer transition-all hover:brightness-110 active:scale-[0.99] flex-shrink-0"
             style={{ background: 'var(--espresso)', color: '#FEF8F0' }}
           >
@@ -238,6 +244,15 @@ export default function MesasGrid() {
           mesaNumero={cobrando.numero}
           onCobrado={() => { setCobrando(null); fetchTodo() }}
           onCerrar={() => setCobrando(null)}
+        />
+      )}
+
+      {verOrden && (
+        <VerOrdenModal
+          mesa={verOrden}
+          onCerrar={() => setVerOrden(null)}
+          onAgregar={() => router.push(`/mesa/${verOrden.id}`)}
+          onCobrar={() => { setCobrando(verOrden); setVerOrden(null) }}
         />
       )}
     </>
