@@ -18,6 +18,7 @@ export default function MesasGrid() {
   const [mesas, setMesas] = useState<Mesa[]>([])
   const [ordenesActivas, setOrdenesActivas] = useState<Record<string, number>>({})
   const [listosPorMesa, setListosPorMesa] = useState<Record<string, number>>({})
+  const [cobrablePorMesa, setCobrablePorMesa] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(true)
   const [admin] = useState(false)
   const [cobrando, setCobrando] = useState<Mesa | null>(null)
@@ -27,18 +28,22 @@ export default function MesasGrid() {
   async function fetchTodo() {
     const [{ data: mesasData }, { data: ordenesData }] = await Promise.all([
       supabase.from('mesas').select('*').order('numero'),
-      supabase.from('ordenes').select('mesa_id, estado').in('estado', ['pendiente', 'en_preparacion', 'listo']),
+      supabase.from('ordenes').select('mesa_id, estado').eq('pagado', false).in('estado', ['pendiente', 'en_preparacion', 'listo', 'entregado']),
     ])
     if (mesasData) setMesas(mesasData)
     if (ordenesData) {
-      const activas: Record<string, number> = {}
+      const enPrep: Record<string, number> = {}
       const listos: Record<string, number> = {}
+      const cobrable: Record<string, boolean> = {}
       ordenesData.forEach((o) => {
-        activas[o.mesa_id] = (activas[o.mesa_id] ?? 0) + 1
+        if (o.estado === 'pendiente' || o.estado === 'en_preparacion') enPrep[o.mesa_id] = (enPrep[o.mesa_id] ?? 0) + 1
         if (o.estado === 'listo') listos[o.mesa_id] = (listos[o.mesa_id] ?? 0) + 1
+        // Solo se puede cobrar cuando ya hay algo listo o entregado (no en plena preparación).
+        if (o.estado === 'listo' || o.estado === 'entregado') cobrable[o.mesa_id] = true
       })
-      setOrdenesActivas(activas)
+      setOrdenesActivas(enPrep)
       setListosPorMesa(listos)
+      setCobrablePorMesa(cobrable)
     }
     setLoading(false)
   }
@@ -89,7 +94,7 @@ export default function MesasGrid() {
     const e = ESTADO[mesa.estado]
     const listo = !admin && (listosPorMesa[mesa.id] ?? 0) > 0
     const activas = !admin && (ordenesActivas[mesa.id] ?? 0) > 0
-    const mostrarCobrar = !admin && mesa.estado !== 'libre'
+    const mostrarCobrar = !admin && (cobrablePorMesa[mesa.id] ?? false)
 
     return (
       <div
