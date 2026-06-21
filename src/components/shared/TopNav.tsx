@@ -21,12 +21,13 @@ const ADMIN: NavItem[] = [
   { href: '/inventario', label: 'Inventario', icon: <><path d="m7.5 4.27 9 5.15" /><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></> },
   { href: '/ventas', label: 'Ventas', icon: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z" /><path d="M8 7h8M8 11h8M8 15h5" /></> },
   { href: '/finanzas', label: 'Finanzas', icon: <><line x1="12" y1="2" x2="12" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></> },
+  { href: '/mesas', label: 'Mesas', icon: <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></> },
 ]
 
 export default function TopNav() {
   const pathname = usePathname()
   const router = useRouter()
-  const enAdmin = pathname.startsWith('/inventario') || pathname.startsWith('/finanzas') || pathname.startsWith('/ventas')
+  const enAdmin = pathname.startsWith('/inventario') || pathname.startsWith('/finanzas') || pathname.startsWith('/ventas') || pathname.startsWith('/mesas')
   const items = enAdmin ? ADMIN : OPERACION
 
   function salir() {
