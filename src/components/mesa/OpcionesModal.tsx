@@ -133,7 +133,9 @@ export default function OpcionesModal({
             </div>
 
             <div style={{ background: '#fff', overflowY: 'auto', flex: 1 }}>
-              {grupos.map((grupo) => (
+              {grupos.map((grupo) => {
+                const grupTienePagados = grupo.opciones.some(op => op.precio > 0)
+                return (
                 <div key={grupo.titulo}>
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '12px 16px 6px' }}>
                     {grupo.titulo}
@@ -171,15 +173,16 @@ export default function OpcionesModal({
                             <span className="text-sm font-bold" style={{ color: activo ? 'var(--espresso)' : 'var(--text-muted)' }}>
                               +{formatMoney(op.precio)}
                             </span>
-                          ) : (
+                          ) : grupTienePagados ? (
                             <span className="text-xs font-semibold" style={{ color: 'var(--gold)' }}>Sin costo extra</span>
-                          )}
+                          ) : null}
                         </button>
                       )
                     })}
                   </div>
                 </div>
-              ))}
+                )
+              })}
 
               <div style={{ padding: '10px 16px 18px', borderTop: '1px solid var(--border-soft)', marginTop: 4 }}>
                 <button
