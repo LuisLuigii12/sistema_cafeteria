@@ -25,7 +25,7 @@ export default function OpcionesModal({
 }: Props) {
   const variantes = producto.variantes ?? []
   const esCaliente = CATEGORIAS_CALIENTES.includes(producto.categorias?.nombre ?? '')
-  const extrasDisponibles = esCaliente ? [...EXTRAS, ...EXTRAS_AZUCARES] : EXTRAS
+  const extrasDisponibles = esCaliente ? [...EXTRAS_AZUCARES, ...EXTRAS] : EXTRAS
   const [paso, setPaso] = useState<1 | 2>(varianteInicial ? 2 : 1)
   const [varianteElegida, setVarianteElegida] = useState<Variante | null>(varianteInicial)
   const [extrasElegidos, setExtrasElegidos] = useState<Extra[]>(extrasIniciales)
@@ -160,9 +160,11 @@ export default function OpcionesModal({
                       <span className="flex-1 text-left text-sm font-semibold" style={{ color: 'var(--espresso)' }}>
                         {extra.nombre}
                       </span>
-                      <span className="text-sm font-bold" style={{ color: activo ? 'var(--espresso)' : 'var(--text-muted)' }}>
-                        +{formatMoney(extra.precio)}
-                      </span>
+                      {extra.precio > 0 && (
+                        <span className="text-sm font-bold" style={{ color: activo ? 'var(--espresso)' : 'var(--text-muted)' }}>
+                          +{formatMoney(extra.precio)}
+                        </span>
+                      )}
                     </button>
                   )
                 })}

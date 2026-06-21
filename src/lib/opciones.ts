@@ -10,14 +10,14 @@ export const EXTRAS: Extra[] = [
   { nombre: 'Boba',               precio: 10 },
 ]
 
-/** Extras adicionales solo para bebidas calientes (Coffee Clasics y Tisanas). */
+/** Extras adicionales solo para bebidas calientes (Coffee Classics y Tisanas). */
 export const EXTRAS_AZUCARES: Extra[] = [
   { nombre: 'Azúcar Stevia',  precio: 0 },
   { nombre: 'Azúcar Splenda', precio: 0 },
 ]
 
 /** Categorías que muestran los extras de azúcar. */
-export const CATEGORIAS_CALIENTES = ['Coffee Clasics', 'Tisanas']
+export const CATEGORIAS_CALIENTES = ['Coffee Classics', 'Tisanas']
 
 /** Precio unitario = tamaño (o precio base) + extras. */
 export function precioUnitario(producto: Producto, variante?: Variante | null, extras: Extra[] = []): number {
