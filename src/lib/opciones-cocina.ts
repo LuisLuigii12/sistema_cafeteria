@@ -19,7 +19,7 @@ export const CREPA_PREMIUMS = ['Lotus']
 export const CREPA_INCLUIDOS = 2
 export const CREPA_PRECIO_EXTRA = 10
 
-export const TERMINOS_HUEVO = ['Estrellado', 'Revuelto', 'Bien cocido']
+export const TERMINOS_HUEVO = ['Estrellado', 'Revuelto', 'Cocido', 'Bien cocido']
 export const ACOMPAÑAMIENTOS_HUEVO = ['Con jamón', 'Con tocino']
 
 /** Products that open the cocina options modal */
