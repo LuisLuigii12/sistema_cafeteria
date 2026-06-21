@@ -107,6 +107,29 @@ export default function MesaPage() {
   }, [dividirCuenta, comensalActivo])
 
   function toggleDividir() {
+    if (!dividirCuenta) {
+      // Activar split: items sin comensal pasan a Persona 1
+      setCarrito(prev => prev.map(item => {
+        if (item.comensal != null) return item
+        const newKey = makeKey(item.producto.id, item.variante?.id, item.extras, 1)
+        return { ...item, comensal: 1, carritoKey: newKey }
+      }))
+    } else {
+      // Desactivar split: quitar comensales y fusionar duplicados
+      setCarrito(prev => {
+        const merged = new Map<string, typeof prev[0]>()
+        for (const item of prev) {
+          const newKey = makeKey(item.producto.id, item.variante?.id, item.extras, undefined)
+          const existing = merged.get(newKey)
+          if (existing) {
+            merged.set(newKey, { ...existing, cantidad: existing.cantidad + item.cantidad })
+          } else {
+            merged.set(newKey, { ...item, comensal: undefined, carritoKey: newKey })
+          }
+        }
+        return [...merged.values()]
+      })
+    }
     setDividirCuenta(d => !d)
     setComensalActivo(1)
     setTotalComensales(2)
