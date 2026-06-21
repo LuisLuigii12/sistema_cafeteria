@@ -7,6 +7,8 @@ import {
   CREPA_PREMIUMS,
   CREPA_INCLUIDOS,
   CREPA_PRECIO_EXTRA,
+  TERMINOS_HUEVO,
+  ACOMPAÑAMIENTOS_HUEVO,
   buildExtrasCrepa,
   costoSiSeAgrega,
   type TipoOpcionCocina,
@@ -38,13 +40,35 @@ function Checkbox({ activo }: { activo: boolean }) {
   )
 }
 
+function Radio({ activo }: { activo: boolean }) {
+  return (
+    <div style={{
+      width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+      background: activo ? 'var(--gold)' : 'white',
+      border: activo ? 'none' : '2px solid var(--border)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      transition: 'all 0.15s',
+    }}>
+      {activo && <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--espresso)' }} />}
+    </div>
+  )
+}
+
 export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCerrar }: Props) {
   const [seleccionados, setSeleccionados] = useState<string[]>([])
+  const [terminoHuevo, setTerminoHuevo] = useState<string | null>(null)
+  const [acompañamiento, setAcompañamiento] = useState<string | null>(null)
+
+  const conHuevo = seleccionados.includes('2 Huevos al gusto')
 
   function toggle(nombre: string) {
     setSeleccionados(prev =>
       prev.includes(nombre) ? prev.filter(n => n !== nombre) : [...prev, nombre]
     )
+    if (nombre === '2 Huevos al gusto' && seleccionados.includes(nombre)) {
+      setTerminoHuevo(null)
+      setAcompañamiento(null)
+    }
   }
 
   const normalesCount = seleccionados.filter(n => !CREPA_PREMIUMS.includes(n)).length
@@ -55,18 +79,19 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
       const extras = buildExtrasCrepa(seleccionados)
       return producto.precio + extras.reduce((s, e) => s + e.precio, 0)
     }
-    return producto.precio + (seleccionados.includes('2 Huevos al gusto') ? 10 : 0)
+    return producto.precio + (conHuevo ? 10 : 0)
   }
 
   function confirmar() {
     if (tipo === 'crepas') {
       onConfirmar(buildExtrasCrepa(seleccionados))
-    } else {
-      onConfirmar(seleccionados.includes('2 Huevos al gusto')
-        ? [{ nombre: '2 Huevos al gusto', precio: 10 }]
-        : []
-      )
+      return
     }
+    if (!conHuevo) { onConfirmar([]); return }
+    const extras: Extra[] = [{ nombre: '2 Huevos al gusto', precio: 10 }]
+    if (terminoHuevo)   extras.push({ nombre: terminoHuevo,   precio: 0 })
+    if (acompañamiento) extras.push({ nombre: acompañamiento, precio: 0 })
+    onConfirmar(extras)
   }
 
   return (
@@ -88,14 +113,12 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
           <h3 style={{ color: '#FEF8F0', fontFamily: "'Playfair Display', serif", fontSize: '1.25rem', fontWeight: 700, marginTop: 4, lineHeight: 1.2 }}>
             {producto.nombre}
           </h3>
-
           {tipo === 'crepas' && (
             <div className="flex items-center gap-2 mt-3">
               <span style={{
                 background: slotsLibres > 0 ? 'var(--gold)' : 'rgba(255,255,255,0.15)',
                 color: slotsLibres > 0 ? 'var(--espresso)' : '#FEF8F0',
-                borderRadius: 20, padding: '3px 12px',
-                fontSize: '0.72rem', fontWeight: 700,
+                borderRadius: 20, padding: '3px 12px', fontSize: '0.72rem', fontWeight: 700,
               }}>
                 {slotsLibres > 0
                   ? `${slotsLibres} ingrediente${slotsLibres > 1 ? 's' : ''} incluido${slotsLibres > 1 ? 's' : ''} disponible${slotsLibres > 1 ? 's' : ''}`
@@ -109,14 +132,12 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
         {/* ── Body ── */}
         <div style={{ background: '#fff', overflowY: 'auto', flex: 1 }}>
 
+          {/* ── Crepas ── */}
           {tipo === 'crepas' && (
             <>
               {CREPA_GRUPOS.map(grupo => (
                 <div key={grupo.nombre}>
-                  <p style={{
-                    color: 'var(--text-muted)', fontSize: '0.68rem', fontWeight: 700,
-                    letterSpacing: '0.1em', textTransform: 'uppercase', padding: '10px 16px 5px',
-                  }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '10px 16px 5px' }}>
                     {grupo.nombre}
                   </p>
                   <div style={{ padding: '0 12px' }}>
@@ -125,25 +146,17 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
                       const costo = activo
                         ? buildExtrasCrepa(seleccionados).find(e => e.nombre === item)?.precio ?? 0
                         : costoSiSeAgrega(item, normalesCount)
-
                       return (
                         <button
                           key={item}
                           onClick={() => toggle(item)}
                           className="flex items-center gap-3 w-full py-2.5 px-3 rounded-xl cursor-pointer transition-all mb-1.5 active:scale-[0.99]"
-                          style={{
-                            background: activo ? 'var(--gold-soft)' : 'transparent',
-                            border: activo ? '1.5px solid var(--gold)' : '1.5px solid var(--border-soft)',
-                          }}
+                          style={{ background: activo ? 'var(--gold-soft)' : 'transparent', border: activo ? '1.5px solid var(--gold)' : '1.5px solid var(--border-soft)' }}
                         >
                           <Checkbox activo={activo} />
-                          <span className="flex-1 text-left text-sm font-semibold" style={{ color: 'var(--espresso)' }}>
-                            {item}
-                          </span>
+                          <span className="flex-1 text-left text-sm font-semibold" style={{ color: 'var(--espresso)' }}>{item}</span>
                           {costo > 0 ? (
-                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: activo ? 'var(--espresso)' : 'var(--text-muted)' }}>
-                              +{formatMoney(costo)}
-                            </span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: activo ? 'var(--espresso)' : 'var(--text-muted)' }}>+{formatMoney(costo)}</span>
                           ) : activo ? (
                             <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--gold)' }}>Incluido</span>
                           ) : null}
@@ -156,36 +169,85 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
             </>
           )}
 
+          {/* ── Huevo ── */}
           {tipo === 'huevo' && (
             <div style={{ padding: '12px 12px 0' }}>
-              <p style={{
-                color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700,
-                letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 4px 10px',
-              }}>
+
+              {/* Checkbox principal */}
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 4px 8px' }}>
                 Opcional
               </p>
-              {['2 Huevos al gusto'].map(item => {
-                const activo = seleccionados.includes(item)
-                return (
-                  <button
-                    key={item}
-                    onClick={() => toggle(item)}
-                    className="flex items-center gap-3 w-full py-3 px-3 rounded-xl cursor-pointer transition-all mb-1.5 active:scale-[0.99]"
-                    style={{
-                      background: activo ? 'var(--gold-soft)' : 'transparent',
-                      border: activo ? '1.5px solid var(--gold)' : '1.5px solid var(--border-soft)',
-                    }}
-                  >
-                    <Checkbox activo={activo} />
-                    <span className="flex-1 text-left text-sm font-semibold" style={{ color: 'var(--espresso)' }}>
-                      {item}
-                    </span>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: activo ? 'var(--espresso)' : 'var(--text-muted)' }}>
-                      +{formatMoney(10)}
-                    </span>
-                  </button>
-                )
-              })}
+              <button
+                onClick={() => toggle('2 Huevos al gusto')}
+                className="flex items-center gap-3 w-full py-3 px-3 rounded-xl cursor-pointer transition-all mb-2 active:scale-[0.99]"
+                style={{ background: conHuevo ? 'var(--gold-soft)' : 'transparent', border: conHuevo ? '1.5px solid var(--gold)' : '1.5px solid var(--border-soft)' }}
+              >
+                <Checkbox activo={conHuevo} />
+                <span className="flex-1 text-left text-sm font-semibold" style={{ color: 'var(--espresso)' }}>2 Huevos al gusto</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: conHuevo ? 'var(--espresso)' : 'var(--text-muted)' }}>+{formatMoney(10)}</span>
+              </button>
+
+              {/* Sub-opciones (solo si eligieron huevo) */}
+              {conHuevo && (
+                <div
+                  className="rounded-2xl overflow-hidden mb-3"
+                  style={{ border: '1px solid var(--border-soft)', background: 'var(--bg-card-soft)' }}
+                >
+                  {/* Término */}
+                  <div style={{ padding: '10px 12px 6px' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
+                      Término
+                    </p>
+                    <div className="flex gap-2 flex-wrap">
+                      {TERMINOS_HUEVO.map(t => {
+                        const activo = terminoHuevo === t
+                        return (
+                          <button
+                            key={t}
+                            onClick={() => setTerminoHuevo(activo ? null : t)}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all active:scale-95"
+                            style={{
+                              background: activo ? 'var(--gold)' : 'white',
+                              color: activo ? 'var(--espresso)' : 'var(--text-muted)',
+                              border: activo ? 'none' : '1px solid var(--border)',
+                            }}
+                          >
+                            <Radio activo={activo} />
+                            {t}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Acompañamiento */}
+                  <div style={{ padding: '8px 12px 12px', borderTop: '1px solid var(--border-soft)' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
+                      Acompañamiento
+                    </p>
+                    <div className="flex gap-2 flex-wrap">
+                      {ACOMPAÑAMIENTOS_HUEVO.map(a => {
+                        const activo = acompañamiento === a
+                        return (
+                          <button
+                            key={a}
+                            onClick={() => setAcompañamiento(activo ? null : a)}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all active:scale-95"
+                            style={{
+                              background: activo ? 'var(--gold)' : 'white',
+                              color: activo ? 'var(--espresso)' : 'var(--text-muted)',
+                              border: activo ? 'none' : '1px solid var(--border)',
+                            }}
+                          >
+                            <Radio activo={activo} />
+                            {a}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
