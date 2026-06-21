@@ -139,7 +139,7 @@ export default function ActiveOrdersBanner({ ordenes, productos }: Props) {
 
       {/* Modal para corregir tamaño/extras de un producto ya enviado */}
       {editando && (() => {
-        const { variante, extras } = parseNotas(editando.item.notas, editando.producto.variantes)
+        const { variante, extras } = parseNotas(editando.item.notas, editando.producto)
         return (
           <OpcionesModal
             producto={editando.producto}

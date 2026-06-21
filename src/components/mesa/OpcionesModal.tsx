@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { formatMoney } from '@/lib/format'
-import { EXTRAS, EXTRAS_AZUCARES, CATEGORIAS_CALIENTES, precioUnitario } from '@/lib/opciones'
+import { gruposDeOpciones, precioUnitario, type GrupoOpcion } from '@/lib/opciones'
 import type { Producto, Variante, Extra } from '@/types'
 
 interface Props {
@@ -14,7 +14,7 @@ interface Props {
   onCerrar: () => void
 }
 
-/** Modal de 2 pasos (tamaño + extras). Se usa al agregar del menú y al corregir una orden ya enviada. */
+/** Modal de 2 pasos: tamaño + opciones (leche, extras, etc.). Las opciones dependen del producto/categoría. */
 export default function OpcionesModal({
   producto,
   varianteInicial = null,
@@ -24,26 +24,30 @@ export default function OpcionesModal({
   onCerrar,
 }: Props) {
   const variantes = producto.variantes ?? []
-  const esCaliente = CATEGORIAS_CALIENTES.includes(producto.categorias?.nombre ?? '')
-  const extrasDisponibles = esCaliente ? [...EXTRAS_AZUCARES, ...EXTRAS] : EXTRAS
+  const grupos = gruposDeOpciones(producto)
   const [paso, setPaso] = useState<1 | 2>(varianteInicial ? 2 : 1)
   const [varianteElegida, setVarianteElegida] = useState<Variante | null>(varianteInicial)
-  const [extrasElegidos, setExtrasElegidos] = useState<Extra[]>(extrasIniciales)
+  const [seleccion, setSeleccion] = useState<Extra[]>(extrasIniciales)
 
   function elegirVariante(v: Variante) {
     setVarianteElegida(v)
-    setPaso(2)
+    if (grupos.length === 0) onConfirmar(v, []) // sin opciones → agrega directo
+    else setPaso(2)
   }
 
-  function toggleExtra(extra: Extra) {
-    setExtrasElegidos((prev) =>
-      prev.some((e) => e.nombre === extra.nombre)
-        ? prev.filter((e) => e.nombre !== extra.nombre)
-        : [...prev, extra],
-    )
+  function toggle(grupo: GrupoOpcion, op: Extra) {
+    setSeleccion((prev) => {
+      const yaEsta = prev.some((o) => o.nombre === op.nombre)
+      if (grupo.modo === 'una') {
+        // Quita cualquier otra opción del mismo grupo, deja solo la elegida (o ninguna si se vuelve a tocar).
+        const sinGrupo = prev.filter((o) => !grupo.opciones.some((g) => g.nombre === o.nombre))
+        return yaEsta ? sinGrupo : [...sinGrupo, op]
+      }
+      return yaEsta ? prev.filter((o) => o.nombre !== op.nombre) : [...prev, op]
+    })
   }
 
-  const precioTotal = precioUnitario(producto, varianteElegida, extrasElegidos)
+  const precioTotal = precioUnitario(producto, varianteElegida, seleccion)
   const ctaLabel = modo === 'editar' ? 'Guardar cambios' : 'Agregar a la orden'
 
   return (
@@ -53,14 +57,14 @@ export default function OpcionesModal({
       onClick={onCerrar}
     >
       <div
-        className="w-full max-w-sm animate-scale overflow-hidden"
-        style={{ borderRadius: 22, boxShadow: '0 32px 72px rgba(28,10,0,0.5)' }}
+        className="w-full max-w-sm animate-scale flex flex-col overflow-hidden"
+        style={{ borderRadius: 22, boxShadow: '0 32px 72px rgba(28,10,0,0.5)', maxHeight: '90vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Paso 1: Tamaño ── */}
         {paso === 1 && (
           <>
-            <div style={{ background: 'var(--espresso)', padding: '20px 20px 18px' }}>
+            <div style={{ background: 'var(--espresso)', padding: '20px 20px 18px', flexShrink: 0 }}>
               <p style={{ color: 'var(--gold)', fontSize: '0.65rem', letterSpacing: '0.13em', textTransform: 'uppercase', fontWeight: 700 }}>
                 Elige el tamaño
               </p>
@@ -97,10 +101,10 @@ export default function OpcionesModal({
           </>
         )}
 
-        {/* ── Paso 2: Extras ── */}
+        {/* ── Paso 2: Opciones ── */}
         {paso === 2 && (
           <>
-            <div style={{ background: 'var(--espresso)', padding: '14px 16px 14px' }}>
+            <div style={{ background: 'var(--espresso)', padding: '14px 16px 14px', flexShrink: 0 }}>
               {variantes.length > 0 && (
                 <button
                   onClick={() => setPaso(1)}
@@ -128,55 +132,58 @@ export default function OpcionesModal({
               </div>
             </div>
 
-            <div style={{ background: '#fff' }}>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '12px 16px 8px' }}>
-                Extras opcionales
-              </p>
-              <div style={{ padding: '0 12px' }}>
-                {extrasDisponibles.map((extra) => {
-                  const activo = extrasElegidos.some((e) => e.nombre === extra.nombre)
-                  return (
-                    <button
-                      key={extra.nombre}
-                      onClick={() => toggleExtra(extra)}
-                      className="flex items-center gap-3 w-full py-3 px-3 rounded-xl cursor-pointer transition-all mb-1.5 active:scale-[0.99]"
-                      style={{
-                        background: activo ? 'var(--gold-soft)' : 'transparent',
-                        border: activo ? '1.5px solid var(--gold)' : '1.5px solid var(--border-soft)',
-                      }}
-                    >
-                      <div className="flex-shrink-0 flex items-center justify-center" style={{
-                        width: 24, height: 24, borderRadius: '50%',
-                        background: activo ? 'var(--gold)' : 'white',
-                        border: activo ? 'none' : '2px solid var(--border)',
-                        transition: 'all 0.15s',
-                      }}>
-                        {activo && (
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--espresso)" strokeWidth="3.5" strokeLinecap="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
-                      </div>
-                      <span className="flex-1 text-left text-sm font-semibold" style={{ color: 'var(--espresso)' }}>
-                        {extra.nombre}
-                      </span>
-                      {extra.precio > 0 ? (
-                        <span className="text-sm font-bold" style={{ color: activo ? 'var(--espresso)' : 'var(--text-muted)' }}>
-                          +{formatMoney(extra.precio)}
-                        </span>
-                      ) : (
-                        <span className="text-xs font-semibold" style={{ color: activo ? 'var(--gold)' : 'var(--text-muted)' }}>
-                          Sin costo extra
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
+            <div style={{ background: '#fff', overflowY: 'auto', flex: 1 }}>
+              {grupos.map((grupo) => (
+                <div key={grupo.titulo}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '12px 16px 6px' }}>
+                    {grupo.titulo}
+                    {grupo.modo === 'una' && <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 500 }}> · elige una</span>}
+                  </p>
+                  <div style={{ padding: '0 12px' }}>
+                    {grupo.opciones.map((op) => {
+                      const activo = seleccion.some((o) => o.nombre === op.nombre)
+                      return (
+                        <button
+                          key={op.nombre}
+                          onClick={() => toggle(grupo, op)}
+                          className="flex items-center gap-3 w-full py-3 px-3 rounded-xl cursor-pointer transition-all mb-1.5 active:scale-[0.99]"
+                          style={{
+                            background: activo ? 'var(--gold-soft)' : 'transparent',
+                            border: activo ? '1.5px solid var(--gold)' : '1.5px solid var(--border-soft)',
+                          }}
+                        >
+                          <div className="flex-shrink-0 flex items-center justify-center" style={{
+                            width: 24, height: 24, borderRadius: grupo.modo === 'una' ? '50%' : 7,
+                            background: activo ? 'var(--gold)' : 'white',
+                            border: activo ? 'none' : '2px solid var(--border)',
+                            transition: 'all 0.15s',
+                          }}>
+                            {activo && (
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--espresso)" strokeWidth="3.5" strokeLinecap="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            )}
+                          </div>
+                          <span className="flex-1 text-left text-sm font-semibold" style={{ color: 'var(--espresso)' }}>
+                            {op.nombre}
+                          </span>
+                          {op.precio > 0 ? (
+                            <span className="text-sm font-bold" style={{ color: activo ? 'var(--espresso)' : 'var(--text-muted)' }}>
+                              +{formatMoney(op.precio)}
+                            </span>
+                          ) : (
+                            <span className="text-xs font-semibold" style={{ color: 'var(--gold)' }}>Gratis</span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
 
               <div style={{ padding: '10px 16px 18px', borderTop: '1px solid var(--border-soft)', marginTop: 4 }}>
                 <button
-                  onClick={() => onConfirmar(varianteElegida, extrasElegidos)}
+                  onClick={() => onConfirmar(varianteElegida, seleccion)}
                   className="w-full flex items-center justify-between py-4 px-5 rounded-2xl cursor-pointer transition-all active:scale-[0.98] hover:brightness-110"
                   style={{ background: 'var(--espresso)', color: '#FEF8F0', boxShadow: 'var(--shadow-md)' }}
                 >

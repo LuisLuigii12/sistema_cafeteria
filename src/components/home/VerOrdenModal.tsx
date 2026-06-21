@@ -199,7 +199,7 @@ export default function VerOrdenModal({ mesa, onCerrar, onAgregar, onCobrar }: P
 
       {/* Modal para corregir tamaño/extras (fuera del overlay para no cerrar ambos) */}
       {editando && (() => {
-        const { variante, extras } = parseNotas(editando.item.notas, editando.producto.variantes)
+        const { variante, extras } = parseNotas(editando.item.notas, editando.producto)
         return (
           <OpcionesModal
             producto={editando.producto}
