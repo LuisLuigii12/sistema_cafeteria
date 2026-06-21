@@ -110,12 +110,12 @@ export default function EditarProductoModal({ producto, onGuardar, onCerrar }: P
       onClick={onCerrar}
     >
       <div
-        className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden animate-scale"
+        className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden animate-scale flex flex-col max-h-[90vh]"
         style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow-lg)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-5 flex items-center gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="p-5 flex items-center gap-3 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
           <span className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: tema.soft, color: tema.color }}>
             <CategoriaIcon categoria={producto.categorias?.nombre} size={24} />
           </span>
@@ -128,7 +128,7 @@ export default function EditarProductoModal({ producto, onGuardar, onCerrar }: P
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-4 overflow-y-auto flex-1 scrollbar-thin">
           {/* Imagen del producto */}
           <div>
             <label className="text-xs font-semibold uppercase tracking-wide block mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -291,7 +291,7 @@ export default function EditarProductoModal({ producto, onGuardar, onCerrar }: P
         </div>
 
         {/* Footer */}
-        <div className="p-5 flex gap-3" style={{ borderTop: '1px solid var(--border)' }}>
+        <div className="p-5 flex gap-3 flex-shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
           <button onClick={onCerrar} className="flex-1 py-3 rounded-xl font-semibold text-sm cursor-pointer transition-colors" style={{ background: 'var(--bg-card-soft)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
             Cancelar
           </button>
