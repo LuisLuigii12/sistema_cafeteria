@@ -10,6 +10,8 @@ import {
   TERMINOS_HUEVO,
   ACOMPAÑAMIENTOS_HUEVO,
   TORTILLAS,
+  INGREDIENTES_CHILAQUILES,
+  SALSAS_CHILAQUILES,
   buildExtrasCrepa,
   costoSiSeAgrega,
   type TipoOpcionCocina,
@@ -55,13 +57,26 @@ function Radio({ activo }: { activo: boolean }) {
   )
 }
 
+function salsaInicial(tipo: TipoOpcionCocina, nombre: string): string | null {
+  if (tipo !== 'chilaquiles') return null
+  if (nombre.includes('Verde')) return 'Verde'
+  if (nombre.includes('Roja')) return 'Roja'
+  return null
+}
+
 export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCerrar }: Props) {
+  // Crepas / huevo
   const [seleccionados, setSeleccionados] = useState<string[]>([])
   const [terminoHuevo, setTerminoHuevo] = useState<string | null>(null)
   const [acompañamiento, setAcompañamiento] = useState<string | null>(null)
   const [tortilla, setTortilla] = useState<string | null>(null)
 
+  // Chilaquiles
+  const [salsa, setSalsa] = useState<string | null>(() => salsaInicial(tipo, producto.nombre))
+  const [ingredientesQuitados, setIngredientesQuitados] = useState<Set<string>>(new Set())
+
   const conHuevo = seleccionados.includes('2 Huevos al gusto')
+  const esChilaquilConSalsa = tipo === 'chilaquiles' && producto.nombre.includes('Chilaquiles')
 
   function toggle(nombre: string) {
     setSeleccionados(prev =>
@@ -71,6 +86,15 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
       setTerminoHuevo(null)
       setAcompañamiento(null)
     }
+  }
+
+  function toggleIngrediente(nombre: string) {
+    setIngredientesQuitados(prev => {
+      const next = new Set(prev)
+      if (next.has(nombre)) next.delete(nombre)
+      else next.add(nombre)
+      return next
+    })
   }
 
   const normalesCount = seleccionados.filter(n => !CREPA_PREMIUMS.includes(n)).length
@@ -93,12 +117,35 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
       onConfirmar(tortilla ? [{ nombre: tortilla, precio: 0 }] : [])
       return
     }
+    if (tipo === 'chilaquiles') {
+      const extras: Extra[] = []
+      // Salsa (solo para chilaquiles, incluye mixtos)
+      if (esChilaquilConSalsa && salsa) extras.push({ nombre: `Salsa ${salsa}`, precio: 0 })
+      // Ingredientes quitados → "Sin X"
+      INGREDIENTES_CHILAQUILES.forEach(i => {
+        if (ingredientesQuitados.has(i)) extras.push({ nombre: `Sin ${i}`, precio: 0 })
+      })
+      // Huevo opcional
+      if (conHuevo) {
+        extras.push({ nombre: '2 Huevos al gusto', precio: 10 })
+        if (terminoHuevo)   extras.push({ nombre: terminoHuevo,   precio: 0 })
+        if (acompañamiento) extras.push({ nombre: acompañamiento, precio: 0 })
+      }
+      onConfirmar(extras)
+      return
+    }
+    // 'huevo' puro
     if (!conHuevo) { onConfirmar([]); return }
     const extras: Extra[] = [{ nombre: '2 Huevos al gusto', precio: 10 }]
     if (terminoHuevo)   extras.push({ nombre: terminoHuevo,   precio: 0 })
     if (acompañamiento) extras.push({ nombre: acompañamiento, precio: 0 })
     onConfirmar(extras)
   }
+
+  const labelHeader =
+    tipo === 'crepas'      ? 'Elige tus ingredientes' :
+    tipo === 'chilaquiles' ? 'Personaliza tu platillo' :
+                             'Opciones'
 
   return (
     <div
@@ -114,7 +161,7 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
         {/* ── Header ── */}
         <div style={{ background: 'var(--espresso)', padding: '18px 20px 16px', flexShrink: 0 }}>
           <p style={{ color: 'var(--gold)', fontSize: '0.65rem', letterSpacing: '0.13em', textTransform: 'uppercase', fontWeight: 700 }}>
-            {tipo === 'crepas' ? 'Elige tus ingredientes' : 'Opciones'}
+            {labelHeader}
           </p>
           <h3 style={{ color: '#FEF8F0', fontFamily: "'Playfair Display', serif", fontSize: '1.25rem', fontWeight: 700, marginTop: 4, lineHeight: 1.2 }}>
             {producto.nombre}
@@ -175,12 +222,66 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
             </>
           )}
 
-          {/* ── Huevo ── */}
-          {tipo === 'huevo' && (
+          {/* ── Chilaquiles / Omelette Chila ── */}
+          {tipo === 'chilaquiles' && (
             <div style={{ padding: '12px 12px 0' }}>
 
-              {/* Checkbox principal */}
+              {/* Salsa (solo para Chilaquiles, no Omelette) */}
+              {esChilaquilConSalsa && (
+                <>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 4px 8px' }}>
+                    Salsa
+                  </p>
+                  <div className="flex gap-2 mb-3">
+                    {SALSAS_CHILAQUILES.map(s => {
+                      const activo = salsa === s
+                      return (
+                        <button
+                          key={s}
+                          onClick={() => setSalsa(s)}
+                          className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all active:scale-95 flex-1 justify-center"
+                          style={{
+                            background: activo ? 'var(--gold)' : 'white',
+                            color: activo ? 'var(--espresso)' : 'var(--text-muted)',
+                            border: activo ? 'none' : '1px solid var(--border)',
+                          }}
+                        >
+                          <Radio activo={activo} />
+                          {s}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* Ingredientes — todos activados por defecto */}
               <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 4px 8px' }}>
+                Ingredientes
+              </p>
+              {INGREDIENTES_CHILAQUILES.map(item => {
+                const quitado = ingredientesQuitados.has(item)
+                return (
+                  <button
+                    key={item}
+                    onClick={() => toggleIngrediente(item)}
+                    className="flex items-center gap-3 w-full py-2.5 px-3 rounded-xl cursor-pointer transition-all mb-1.5 active:scale-[0.99]"
+                    style={{
+                      background: quitado ? '#FEF2F2' : 'var(--gold-soft)',
+                      border: quitado ? '1.5px solid #FCA5A5' : '1.5px solid var(--gold)',
+                    }}
+                  >
+                    <Checkbox activo={!quitado} />
+                    <span className="flex-1 text-left text-sm font-semibold" style={{ color: 'var(--espresso)' }}>{item}</span>
+                    {quitado && (
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#EF4444' }}>Sin {item}</span>
+                    )}
+                  </button>
+                )
+              })}
+
+              {/* Huevo opcional */}
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '12px 4px 8px' }}>
                 Opcional
               </p>
               <button
@@ -193,13 +294,11 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: conHuevo ? 'var(--espresso)' : 'var(--text-muted)' }}>+{formatMoney(10)}</span>
               </button>
 
-              {/* Sub-opciones (solo si eligieron huevo) */}
               {conHuevo && (
                 <div
                   className="rounded-2xl overflow-hidden mb-3"
                   style={{ border: '1px solid var(--border-soft)', background: 'var(--bg-card-soft)' }}
                 >
-                  {/* Término */}
                   <div style={{ padding: '10px 12px 6px' }}>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
                       Término
@@ -225,8 +324,82 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
                       })}
                     </div>
                   </div>
+                  <div style={{ padding: '8px 12px 12px', borderTop: '1px solid var(--border-soft)' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
+                      Acompañamiento
+                    </p>
+                    <div className="flex gap-2 flex-wrap">
+                      {ACOMPAÑAMIENTOS_HUEVO.map(a => {
+                        const activo = acompañamiento === a
+                        return (
+                          <button
+                            key={a}
+                            onClick={() => setAcompañamiento(activo ? null : a)}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all active:scale-95"
+                            style={{
+                              background: activo ? 'var(--gold)' : 'white',
+                              color: activo ? 'var(--espresso)' : 'var(--text-muted)',
+                              border: activo ? 'none' : '1px solid var(--border)',
+                            }}
+                          >
+                            <Radio activo={activo} />
+                            {a}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
-                  {/* Acompañamiento */}
+          {/* ── Huevo (puro) ── */}
+          {tipo === 'huevo' && (
+            <div style={{ padding: '12px 12px 0' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 4px 8px' }}>
+                Opcional
+              </p>
+              <button
+                onClick={() => toggle('2 Huevos al gusto')}
+                className="flex items-center gap-3 w-full py-3 px-3 rounded-xl cursor-pointer transition-all mb-2 active:scale-[0.99]"
+                style={{ background: conHuevo ? 'var(--gold-soft)' : 'transparent', border: conHuevo ? '1.5px solid var(--gold)' : '1.5px solid var(--border-soft)' }}
+              >
+                <Checkbox activo={conHuevo} />
+                <span className="flex-1 text-left text-sm font-semibold" style={{ color: 'var(--espresso)' }}>2 Huevos al gusto</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: conHuevo ? 'var(--espresso)' : 'var(--text-muted)' }}>+{formatMoney(10)}</span>
+              </button>
+
+              {conHuevo && (
+                <div
+                  className="rounded-2xl overflow-hidden mb-3"
+                  style={{ border: '1px solid var(--border-soft)', background: 'var(--bg-card-soft)' }}
+                >
+                  <div style={{ padding: '10px 12px 6px' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
+                      Término
+                    </p>
+                    <div className="flex gap-2 flex-wrap">
+                      {TERMINOS_HUEVO.map(t => {
+                        const activo = terminoHuevo === t
+                        return (
+                          <button
+                            key={t}
+                            onClick={() => setTerminoHuevo(activo ? null : t)}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all active:scale-95"
+                            style={{
+                              background: activo ? 'var(--gold)' : 'white',
+                              color: activo ? 'var(--espresso)' : 'var(--text-muted)',
+                              border: activo ? 'none' : '1px solid var(--border)',
+                            }}
+                          >
+                            <Radio activo={activo} />
+                            {t}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
                   <div style={{ padding: '8px 12px 12px', borderTop: '1px solid var(--border-soft)' }}>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
                       Acompañamiento

@@ -1,6 +1,6 @@
 import type { Extra } from '@/types'
 
-export type TipoOpcionCocina = 'crepas' | 'huevo' | 'tortilla'
+export type TipoOpcionCocina = 'crepas' | 'huevo' | 'tortilla' | 'chilaquiles'
 
 export interface GrupoIngrediente {
   nombre: string
@@ -25,11 +25,18 @@ export const ACOMPAÑAMIENTOS_HUEVO = ['Con jamón', 'Con tocino']
 /** Tortillas (gratis) para algunos desayunos. Se elige una. */
 export const TORTILLAS = ['Tortillas de maíz', 'Tortillas de harina', 'Sin tortillas']
 
+/** Ingredientes que lleva por defecto un chilaquil / omelette chila */
+export const INGREDIENTES_CHILAQUILES = ['Cebolla', 'Pollo', 'Crema', 'Queso fresco', 'Cilantro']
+
+/** Opciones de salsa para chilaquiles (incluye mixtos) */
+export const SALSAS_CHILAQUILES = ['Verde', 'Roja', 'Mixta']
+
 /** Products that open the cocina options modal */
 export const OPCIONES_COCINA: Record<string, TipoOpcionCocina> = {
   'Crepas': 'crepas',
-  'Chilaquiles Verdes con Pollo': 'huevo',
-  'Chilaquiles Rojos con Pollo': 'huevo',
+  'Chilaquiles Verdes con Pollo': 'chilaquiles',
+  'Chilaquiles Rojos con Pollo': 'chilaquiles',
+  'Omelette Chila': 'chilaquiles',
   'Machaca con Verdura o Huevo': 'tortilla',
   'Jamón con Huevo': 'tortilla',
   'Omelette Ranchero': 'tortilla',
