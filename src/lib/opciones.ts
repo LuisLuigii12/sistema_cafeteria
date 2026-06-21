@@ -1,14 +1,23 @@
 import type { Extra, Producto, Variante } from '@/types'
 
-/** Extras disponibles (lista fija para todos los productos con tamaño). */
+/** Extras disponibles para todos los productos con tamaño. */
 export const EXTRAS: Extra[] = [
   { nombre: 'Leche de Almendras', precio: 15 },
   { nombre: 'Leche de Coco',      precio: 15 },
-  { nombre: 'Leche Deslactosada', precio: 15 },
-  { nombre: 'Leche Entera',       precio: 15 },
-  { nombre: 'Leche Light',        precio: 15 },
+  { nombre: 'Leche Deslactosada', precio: 0  },
+  { nombre: 'Leche Entera',       precio: 0  },
+  { nombre: 'Leche Light',        precio: 0  },
   { nombre: 'Boba',               precio: 10 },
 ]
+
+/** Extras adicionales solo para bebidas calientes (Coffee Clasics y Tisanas). */
+export const EXTRAS_AZUCARES: Extra[] = [
+  { nombre: 'Azúcar Stevia',  precio: 0 },
+  { nombre: 'Azúcar Splenda', precio: 0 },
+]
+
+/** Categorías que muestran los extras de azúcar. */
+export const CATEGORIAS_CALIENTES = ['Coffee Clasics', 'Tisanas']
 
 /** Precio unitario = tamaño (o precio base) + extras. */
 export function precioUnitario(producto: Producto, variante?: Variante | null, extras: Extra[] = []): number {
@@ -34,12 +43,13 @@ export function parseNotas(
     .map((t) => t.trim())
     .filter(Boolean)
 
+  const todosExtras = [...EXTRAS, ...EXTRAS_AZUCARES]
   let variante: Variante | null = null
   const extras: Extra[] = []
   for (const t of tokens) {
     const v = variantes.find((v) => v.nombre === t)
     if (v && !variante) { variante = v; continue }
-    const e = EXTRAS.find((e) => e.nombre === t)
+    const e = todosExtras.find((e) => e.nombre === t)
     if (e && !extras.some((x) => x.nombre === e.nombre)) extras.push(e)
   }
   return { variante, extras }

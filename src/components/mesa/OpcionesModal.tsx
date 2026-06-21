@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { formatMoney } from '@/lib/format'
-import { EXTRAS, precioUnitario } from '@/lib/opciones'
+import { EXTRAS, EXTRAS_AZUCARES, CATEGORIAS_CALIENTES, precioUnitario } from '@/lib/opciones'
 import type { Producto, Variante, Extra } from '@/types'
 
 interface Props {
@@ -24,6 +24,8 @@ export default function OpcionesModal({
   onCerrar,
 }: Props) {
   const variantes = producto.variantes ?? []
+  const esCaliente = CATEGORIAS_CALIENTES.includes(producto.categorias?.nombre ?? '')
+  const extrasDisponibles = esCaliente ? [...EXTRAS, ...EXTRAS_AZUCARES] : EXTRAS
   const [paso, setPaso] = useState<1 | 2>(varianteInicial ? 2 : 1)
   const [varianteElegida, setVarianteElegida] = useState<Variante | null>(varianteInicial)
   const [extrasElegidos, setExtrasElegidos] = useState<Extra[]>(extrasIniciales)
@@ -131,7 +133,7 @@ export default function OpcionesModal({
                 Extras opcionales
               </p>
               <div style={{ padding: '0 12px' }}>
-                {EXTRAS.map((extra) => {
+                {extrasDisponibles.map((extra) => {
                   const activo = extrasElegidos.some((e) => e.nombre === extra.nombre)
                   return (
                     <button
