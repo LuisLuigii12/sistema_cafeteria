@@ -57,10 +57,7 @@ function Radio({ activo }: { activo: boolean }) {
   )
 }
 
-function salsaInicial(tipo: TipoOpcionCocina, nombre: string): string | null {
-  if (tipo !== 'chilaquiles') return null
-  if (nombre.includes('Verde')) return 'Verde'
-  if (nombre.includes('Roja')) return 'Roja'
+function salsaInicial(_tipo: TipoOpcionCocina, _nombre: string): string | null {
   return null
 }
 
@@ -76,7 +73,9 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
   const [ingredientesQuitados, setIngredientesQuitados] = useState<Set<string>>(new Set())
 
   const conHuevo = seleccionados.includes('2 Huevos al gusto')
-  const esChilaquilConSalsa = tipo === 'chilaquiles' && producto.nombre.includes('Chilaquiles')
+  // Chilaquiles: solo toggle Mixtos. Omelette Chila: selector completo Verde/Roja/Mixta
+  const esChilaquiles = tipo === 'chilaquiles' && producto.nombre.includes('Chilaquiles')
+  const esOmeletteChila = tipo === 'chilaquiles' && !producto.nombre.includes('Chilaquiles')
 
   function toggle(nombre: string) {
     setSeleccionados(prev =>
@@ -119,8 +118,10 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
     }
     if (tipo === 'chilaquiles') {
       const extras: Extra[] = []
-      // Salsa (solo para chilaquiles, incluye mixtos)
-      if (esChilaquilConSalsa && salsa) extras.push({ nombre: `Salsa ${salsa}`, precio: 0 })
+      // Chilaquiles: solo "Mixtos" si lo marcaron
+      if (esChilaquiles && salsa === 'Mixta') extras.push({ nombre: 'Mixtos', precio: 0 })
+      // Omelette Chila: salsa elegida
+      if (esOmeletteChila && salsa) extras.push({ nombre: `Salsa ${salsa}`, precio: 0 })
       // Ingredientes quitados → "Sin X"
       INGREDIENTES_CHILAQUILES.forEach(i => {
         if (ingredientesQuitados.has(i)) extras.push({ nombre: `Sin ${i}`, precio: 0 })
@@ -226,8 +227,29 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
           {tipo === 'chilaquiles' && (
             <div style={{ padding: '12px 12px 0' }}>
 
-              {/* Salsa (solo para Chilaquiles, no Omelette) */}
-              {esChilaquilConSalsa && (
+              {/* Chilaquiles: solo toggle Mixtos */}
+              {esChilaquiles && (
+                <>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 4px 8px' }}>
+                    Salsa
+                  </p>
+                  <button
+                    onClick={() => setSalsa(salsa === 'Mixta' ? null : 'Mixta')}
+                    className="flex items-center gap-3 w-full py-3 px-3 rounded-xl cursor-pointer transition-all mb-3 active:scale-[0.99]"
+                    style={{
+                      background: salsa === 'Mixta' ? 'var(--gold-soft)' : 'transparent',
+                      border: salsa === 'Mixta' ? '1.5px solid var(--gold)' : '1.5px solid var(--border-soft)',
+                    }}
+                  >
+                    <Checkbox activo={salsa === 'Mixta'} />
+                    <span className="flex-1 text-left text-sm font-semibold" style={{ color: 'var(--espresso)' }}>Mixtos</span>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>mitad verde, mitad roja</span>
+                  </button>
+                </>
+              )}
+
+              {/* Omelette Chila: selector completo Verde / Roja / Mixta */}
+              {esOmeletteChila && (
                 <>
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 4px 8px' }}>
                     Salsa
@@ -238,7 +260,7 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
                       return (
                         <button
                           key={s}
-                          onClick={() => setSalsa(s)}
+                          onClick={() => setSalsa(activo ? null : s)}
                           className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all active:scale-95 flex-1 justify-center"
                           style={{
                             background: activo ? 'var(--gold)' : 'white',
