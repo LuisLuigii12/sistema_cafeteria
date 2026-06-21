@@ -228,7 +228,7 @@ export default function EditarProductoModal({ producto, onGuardar, onCerrar }: P
             </span>
           </button>
 
-          {/* Opciones rápidas */}
+          {/* Indicaciones rápidas — deshabilitado: se guarda en producto_opciones pero el modal de pedido no las consume todavía
           <div>
             <label className="text-xs font-semibold uppercase tracking-wide block mb-0.5" style={{ color: 'var(--text-muted)' }}>
               Indicaciones rápidas
@@ -270,6 +270,7 @@ export default function EditarProductoModal({ producto, onGuardar, onCerrar }: P
               </button>
             </div>
           </div>
+          */}
 
           {/* Ingredientes — qué lleva (se ve en Cocina/Barra) */}
           <div>
