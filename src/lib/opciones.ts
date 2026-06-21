@@ -1,12 +1,12 @@
 import type { Extra, Producto, Variante } from '@/types'
 
-/** Extras disponibles para todos los productos con tamaño. */
+/** Extras disponibles para todos los productos con tamaño (gratis primero, de paga al final). */
 export const EXTRAS: Extra[] = [
-  { nombre: 'Leche de Almendras', precio: 15 },
-  { nombre: 'Leche de Coco',      precio: 15 },
   { nombre: 'Leche Deslactosada', precio: 0  },
   { nombre: 'Leche Entera',       precio: 0  },
   { nombre: 'Leche Light',        precio: 0  },
+  { nombre: 'Leche de Almendras', precio: 15 },
+  { nombre: 'Leche de Coco',      precio: 15 },
   { nombre: 'Boba',               precio: 10 },
 ]
 

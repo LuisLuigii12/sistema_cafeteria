@@ -160,9 +160,13 @@ export default function OpcionesModal({
                       <span className="flex-1 text-left text-sm font-semibold" style={{ color: 'var(--espresso)' }}>
                         {extra.nombre}
                       </span>
-                      {extra.precio > 0 && (
+                      {extra.precio > 0 ? (
                         <span className="text-sm font-bold" style={{ color: activo ? 'var(--espresso)' : 'var(--text-muted)' }}>
                           +{formatMoney(extra.precio)}
+                        </span>
+                      ) : (
+                        <span className="text-xs font-semibold" style={{ color: activo ? 'var(--gold)' : 'var(--text-muted)' }}>
+                          Sin costo extra
                         </span>
                       )}
                     </button>
