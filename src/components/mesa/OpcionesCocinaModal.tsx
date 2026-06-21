@@ -9,6 +9,7 @@ import {
   CREPA_PRECIO_EXTRA,
   TERMINOS_HUEVO,
   ACOMPAÑAMIENTOS_HUEVO,
+  TORTILLAS,
   buildExtrasCrepa,
   costoSiSeAgrega,
   type TipoOpcionCocina,
@@ -58,6 +59,7 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
   const [seleccionados, setSeleccionados] = useState<string[]>([])
   const [terminoHuevo, setTerminoHuevo] = useState<string | null>(null)
   const [acompañamiento, setAcompañamiento] = useState<string | null>(null)
+  const [tortilla, setTortilla] = useState<string | null>(null)
 
   const conHuevo = seleccionados.includes('2 Huevos al gusto')
 
@@ -85,6 +87,10 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
   function confirmar() {
     if (tipo === 'crepas') {
       onConfirmar(buildExtrasCrepa(seleccionados))
+      return
+    }
+    if (tipo === 'tortilla') {
+      onConfirmar(tortilla ? [{ nombre: tortilla, precio: 0 }] : [])
       return
     }
     if (!conHuevo) { onConfirmar([]); return }
@@ -248,6 +254,30 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ── Tortillas ── */}
+          {tipo === 'tortilla' && (
+            <div style={{ padding: '12px 12px 0' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 4px 8px' }}>
+                Tortillas (gratis)
+              </p>
+              {TORTILLAS.map((t) => {
+                const activo = tortilla === t
+                return (
+                  <button
+                    key={t}
+                    onClick={() => setTortilla(activo ? null : t)}
+                    className="flex items-center gap-3 w-full py-3 px-3 rounded-xl cursor-pointer transition-all mb-1.5 active:scale-[0.99]"
+                    style={{ background: activo ? 'var(--gold-soft)' : 'transparent', border: activo ? '1.5px solid var(--gold)' : '1.5px solid var(--border-soft)' }}
+                  >
+                    <Radio activo={activo} />
+                    <span className="flex-1 text-left text-sm font-semibold" style={{ color: 'var(--espresso)' }}>{t}</span>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--gold)' }}>Gratis</span>
+                  </button>
+                )
+              })}
             </div>
           )}
 

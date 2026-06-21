@@ -1,6 +1,6 @@
 import type { Extra } from '@/types'
 
-export type TipoOpcionCocina = 'crepas' | 'huevo'
+export type TipoOpcionCocina = 'crepas' | 'huevo' | 'tortilla'
 
 export interface GrupoIngrediente {
   nombre: string
@@ -22,11 +22,18 @@ export const CREPA_PRECIO_EXTRA = 10
 export const TERMINOS_HUEVO = ['Estrellado', 'Revuelto', 'Cocido', 'Bien cocido']
 export const ACOMPAÑAMIENTOS_HUEVO = ['Con jamón', 'Con tocino']
 
+/** Tortillas (gratis) para algunos desayunos. Se elige una. */
+export const TORTILLAS = ['Tortillas de maíz', 'Tortillas de harina', 'Sin tortillas']
+
 /** Products that open the cocina options modal */
 export const OPCIONES_COCINA: Record<string, TipoOpcionCocina> = {
   'Crepas': 'crepas',
   'Chilaquiles Verdes con Pollo': 'huevo',
   'Chilaquiles Rojos con Pollo': 'huevo',
+  'Machaca con Verdura o Huevo': 'tortilla',
+  'Jamón con Huevo': 'tortilla',
+  'Omelette Ranchero': 'tortilla',
+  'Omelette Clásico': 'tortilla',
 }
 
 /**
