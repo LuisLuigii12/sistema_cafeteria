@@ -153,6 +153,7 @@ export default function MesaPage() {
             cantidad: i.cantidad,
             precio_unitario: precioUnitario(i.producto, i.variante, i.extras),
             notas: buildNotas(i.variante, i.extras),
+            comensal: i.comensal ?? null,
           }))
         )
       }

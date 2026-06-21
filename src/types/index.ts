@@ -84,6 +84,7 @@ export interface OrdenItem {
   cantidad: number
   precio_unitario: number
   notas: string | null
+  comensal: number | null
   productos?: Producto
 }
 
