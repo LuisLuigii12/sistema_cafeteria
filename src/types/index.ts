@@ -125,4 +125,5 @@ export interface ItemCarrito {
   variante?: Variante
   extras: Extra[]
   cantidad: number
+  comensal?: number
 }

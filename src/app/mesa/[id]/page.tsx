@@ -32,6 +32,9 @@ export default function MesaPage() {
   const [enviando, setEnviando] = useState(false)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
+  const [dividirCuenta, setDividirCuenta] = useState(false)
+  const [comensalActivo, setComensalActivo] = useState(1)
+  const [totalComensales, setTotalComensales] = useState(2)
 
   useEffect(() => {
     async function cargarDatos() {
@@ -89,18 +92,31 @@ export default function MesaPage() {
     setTimeout(() => setToast(null), 3500)
   }
 
-  function makeKey(productoId: string, varianteId?: string, extras: Extra[] = []) {
-    return `${productoId}|${varianteId ?? ''}|${extras.map(e => e.nombre).sort().join(',')}`
+  function makeKey(productoId: string, varianteId?: string, extras: Extra[] = [], comensal?: number) {
+    return `${productoId}|${varianteId ?? ''}|${extras.map(e => e.nombre).sort().join(',')}|${comensal ?? 0}`
   }
 
   const agregarAlCarrito = useCallback((producto: Producto, variante?: Variante, extras: Extra[] = []) => {
-    const key = makeKey(producto.id, variante?.id, extras)
+    const comensal = dividirCuenta ? comensalActivo : undefined
+    const key = makeKey(producto.id, variante?.id, extras, comensal)
     setCarrito(prev => {
       const existe = prev.find(i => i.carritoKey === key)
       if (existe) return prev.map(i => i.carritoKey === key ? { ...i, cantidad: i.cantidad + 1 } : i)
-      return [...prev, { carritoKey: key, producto, variante, extras, cantidad: 1 }]
+      return [...prev, { carritoKey: key, producto, variante, extras, cantidad: 1, comensal }]
     })
-  }, [])
+  }, [dividirCuenta, comensalActivo])
+
+  function toggleDividir() {
+    setDividirCuenta(d => !d)
+    setComensalActivo(1)
+    setTotalComensales(2)
+  }
+
+  function agregarComensal() {
+    const nuevo = totalComensales + 1
+    setTotalComensales(nuevo)
+    setComensalActivo(nuevo)
+  }
 
   const actualizarCantidad = useCallback((carritoKey: string, cantidad: number) => {
     if (cantidad <= 0) {
@@ -269,6 +285,12 @@ export default function MesaPage() {
               onActualizar={actualizarCantidad}
               onEnviar={enviarOrden}
               onLimpiar={() => setCarrito([])}
+              dividirCuenta={dividirCuenta}
+              comensalActivo={comensalActivo}
+              totalComensales={totalComensales}
+              onToggleDividir={toggleDividir}
+              onCambiarComensal={setComensalActivo}
+              onAgregarComensal={agregarComensal}
             />
           </div>
         </div>
