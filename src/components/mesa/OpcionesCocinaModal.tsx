@@ -456,7 +456,7 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
           {tipo === 'tortilla' && (
             <div style={{ padding: '12px 12px 0' }}>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 4px 8px' }}>
-                Tortillas (gratis)
+                Tortillas (sin costo extra)
               </p>
               {TORTILLAS.map((t) => {
                 const activo = tortilla === t
@@ -469,7 +469,7 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
                   >
                     <Radio activo={activo} />
                     <span className="flex-1 text-left text-sm font-semibold" style={{ color: 'var(--espresso)' }}>{t}</span>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--gold)' }}>Gratis</span>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--gold)' }}>Sin costo extra</span>
                   </button>
                 )
               })}

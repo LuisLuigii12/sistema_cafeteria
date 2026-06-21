@@ -172,7 +172,7 @@ export default function OpcionesModal({
                               +{formatMoney(op.precio)}
                             </span>
                           ) : (
-                            <span className="text-xs font-semibold" style={{ color: 'var(--gold)' }}>Gratis</span>
+                            <span className="text-xs font-semibold" style={{ color: 'var(--gold)' }}>Sin costo extra</span>
                           )}
                         </button>
                       )
