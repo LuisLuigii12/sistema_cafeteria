@@ -234,7 +234,7 @@ export default function OrderSummary({
                 <div className="flex items-center justify-between px-1 mb-1.5">
                   <div className="flex items-center gap-1.5">
                     <span style={{ width: 9, height: 9, borderRadius: '50%', background: color, display: 'inline-block' }} />
-                    <span className="text-xs font-bold" style={{ color: 'var(--espresso)' }}>Persona {n}</span>
+                    <span className="text-xs font-bold" style={{ color: 'var(--espresso)' }}>Comensal {n}</span>
                   </div>
                   <span className="text-xs font-bold tabular-nums" style={{ color }}>{formatMoney(subtotal)}</span>
                 </div>
@@ -267,7 +267,7 @@ export default function OrderSummary({
                 <div key={n} className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block' }} />
-                    <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Persona {n}</span>
+                    <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Comensal {n}</span>
                   </div>
                   <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--espresso)' }}>{formatMoney(subtotal)}</span>
                 </div>

@@ -149,7 +149,7 @@ export default function CobrarModal({ mesaId, mesaNumero, onCobrado, onCerrar }:
                     : { background: 'transparent', color: 'var(--text-muted)' }
                   }
                 >
-                  Por persona
+                  Por comensal
                 </button>
                 <button
                   onClick={() => setVistaPersona(false)}
@@ -185,7 +185,7 @@ export default function CobrarModal({ mesaId, mesaNumero, onCobrado, onCerrar }:
             <div className="space-y-4">
               {cuentaPorPersona.map(([n, grupo]) => {
                 const color = n === 0 ? '#94A3B8' : COLORES[(n - 1) % COLORES.length]
-                const label = n === 0 ? 'Sin asignar' : `Persona ${n}`
+                const label = n === 0 ? 'Sin asignar' : `Comensal ${n}`
                 return (
                   <div key={n} className="rounded-2xl overflow-hidden" style={{ border: `1.5px solid ${color}30` }}>
                     {/* Encabezado persona */}
