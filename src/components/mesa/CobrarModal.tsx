@@ -110,13 +110,6 @@ export default function CobrarModal({ mesaId, mesaNumero, onCobrado, onCerrar }:
     onCobrado()
   }
 
-  async function liberarSinCobrar() {
-    setProcesando(true)
-    await supabase.from('ordenes').update({ estado: 'cancelado' })
-      .eq('mesa_id', mesaId).in('estado', ['pendiente', 'en_preparacion', 'listo', 'entregado'])
-    await supabase.from('mesas').update({ estado: 'libre' }).eq('id', mesaId)
-    onCobrado()
-  }
 
   const mostrandoPorPersona = tieneSplit && vistaPersona
 
@@ -257,14 +250,6 @@ export default function CobrarModal({ mesaId, mesaNumero, onCobrado, onCerrar }:
                 <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
               </svg>
               {procesando ? 'Procesando...' : `Cobrar ${formatMoney(total)}`}
-            </button>
-            <button
-              onClick={liberarSinCobrar}
-              disabled={procesando}
-              className="w-full py-2.5 rounded-xl font-semibold text-sm cursor-pointer transition-colors disabled:opacity-50"
-              style={{ background: 'transparent', color: 'var(--text-muted)' }}
-            >
-              Liberar sin cobrar
             </button>
           </div>
         )}
