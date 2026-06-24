@@ -142,11 +142,17 @@ export default function MesaPage() {
   }
 
   const actualizarCantidad = useCallback((carritoKey: string, cantidad: number) => {
-    if (cantidad <= 0) {
-      setCarrito(prev => prev.filter(i => i.carritoKey !== carritoKey))
-    } else {
-      setCarrito(prev => prev.map(i => i.carritoKey === carritoKey ? { ...i, cantidad } : i))
-    }
+    setCarrito(prev => {
+      const nuevo = cantidad <= 0
+        ? prev.filter(i => i.carritoKey !== carritoKey)
+        : prev.map(i => i.carritoKey === carritoKey ? { ...i, cantidad } : i)
+      if (nuevo.length === 0) {
+        setDividirCuenta(false)
+        setComensalActivo(1)
+        setTotalComensales(2)
+      }
+      return nuevo
+    })
   }, [])
 
   async function enviarOrden() {
@@ -184,6 +190,9 @@ export default function MesaPage() {
       await supabase.from('mesas').update({ estado: 'ocupada' }).eq('id', mesaId)
       setMesa(m => m ? { ...m, estado: 'ocupada' } : m)
       setCarrito([])
+      setDividirCuenta(false)
+      setComensalActivo(1)
+      setTotalComensales(2)
 
       // Refrescar órdenes activas
       const { data } = await supabase.from('ordenes').select('*, orden_items(*, productos(nombre))').eq('mesa_id', mesaId).in('estado', ['pendiente', 'en_preparacion', 'listo']).order('created_at')
@@ -308,7 +317,7 @@ export default function MesaPage() {
               enviando={enviando}
               onActualizar={actualizarCantidad}
               onEnviar={enviarOrden}
-              onLimpiar={() => setCarrito([])}
+              onLimpiar={() => { setCarrito([]); setDividirCuenta(false); setComensalActivo(1); setTotalComensales(2) }}
               dividirCuenta={dividirCuenta}
               comensalActivo={comensalActivo}
               totalComensales={totalComensales}
