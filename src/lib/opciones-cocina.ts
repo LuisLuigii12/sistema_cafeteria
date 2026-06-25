@@ -36,6 +36,7 @@ export const OPCIONES_COCINA: Record<string, TipoOpcionCocina> = {
   'Crepas': 'crepas',
   'Chilaquiles Verdes con Pollo': 'chilaquiles',
   'Chilaquiles Rojos con Pollo': 'chilaquiles',
+  'Chilaquiles Mixtos': 'chilaquiles',
   'Omelette Chila': 'chilaquiles',
   'Machaca con Verdura o Huevo': 'tortilla',
   'Jamón con Huevo': 'tortilla',

@@ -73,8 +73,7 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
   const [ingredientesQuitados, setIngredientesQuitados] = useState<Set<string>>(new Set())
 
   const conHuevo = seleccionados.includes('2 Huevos al gusto')
-  // Chilaquiles: solo toggle Mixtos. Omelette Chila: selector completo Verde/Roja/Mixta
-  const esChilaquiles = tipo === 'chilaquiles' && producto.nombre.includes('Chilaquiles')
+  // Solo Omelette Chila lleva selector de salsa (Verde/Roja/Mixta). Los Chilaquiles ya no.
   const esOmeletteChila = tipo === 'chilaquiles' && !producto.nombre.includes('Chilaquiles')
 
   function toggle(nombre: string) {
@@ -118,9 +117,7 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
     }
     if (tipo === 'chilaquiles') {
       const extras: Extra[] = []
-      // Chilaquiles: solo "Mixtos" si lo marcaron
-      if (esChilaquiles && salsa === 'Mixta') extras.push({ nombre: 'Mixtos', precio: 0 })
-      // Omelette Chila: salsa elegida
+      // Omelette Chila: salsa elegida (los Chilaquiles ya no llevan selector de salsa)
       if (esOmeletteChila && salsa) extras.push({ nombre: `Salsa ${salsa}`, precio: 0 })
       // Ingredientes quitados → "Sin X"
       INGREDIENTES_CHILAQUILES.forEach(i => {
@@ -226,27 +223,6 @@ export default function OpcionesCocinaModal({ producto, tipo, onConfirmar, onCer
           {/* ── Chilaquiles / Omelette Chila ── */}
           {tipo === 'chilaquiles' && (
             <div style={{ padding: '12px 12px 0' }}>
-
-              {/* Chilaquiles: solo toggle Mixtos */}
-              {esChilaquiles && (
-                <>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 4px 8px' }}>
-                    Salsa
-                  </p>
-                  <button
-                    onClick={() => setSalsa(salsa === 'Mixta' ? null : 'Mixta')}
-                    className="flex items-center gap-3 w-full py-3 px-3 rounded-xl cursor-pointer transition-all mb-3 active:scale-[0.99]"
-                    style={{
-                      background: salsa === 'Mixta' ? 'var(--gold-soft)' : 'transparent',
-                      border: salsa === 'Mixta' ? '1.5px solid var(--gold)' : '1.5px solid var(--border-soft)',
-                    }}
-                  >
-                    <Checkbox activo={salsa === 'Mixta'} />
-                    <span className="flex-1 text-left text-sm font-semibold" style={{ color: 'var(--espresso)' }}>Mixtos</span>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>mitad verde, mitad roja</span>
-                  </button>
-                </>
-              )}
 
               {/* Omelette Chila: selector completo Verde / Roja / Mixta */}
               {esOmeletteChila && (
