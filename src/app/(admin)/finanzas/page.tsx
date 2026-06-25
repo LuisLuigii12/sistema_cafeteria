@@ -7,14 +7,17 @@ import GastoModal from '@/components/finanzas/GastoModal'
 import { formatMoney, formatMoneyShort } from '@/lib/format'
 import type { Orden, Gasto, CategoriaGasto } from '@/types'
 
-type Periodo = 'hoy' | '7d' | '30d' | 'todo'
+type Periodo = 'hoy' | '7d' | '30d' | 'anio' | 'todo'
 
 const PERIODOS: { value: Periodo; label: string }[] = [
   { value: 'hoy', label: 'Hoy' },
   { value: '7d', label: '7 días' },
   { value: '30d', label: '30 días' },
+  { value: 'anio', label: 'Este año' },
   { value: 'todo', label: 'Todo' },
 ]
+
+const NOMBRES_MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
 export default function FinanzasPage() {
   const [ordenes, setOrdenes] = useState<Orden[]>([])
@@ -53,6 +56,7 @@ export default function FinanzasPage() {
     if (periodo === 'hoy') { d.setHours(0, 0, 0, 0); return d }
     if (periodo === '7d') { d.setDate(d.getDate() - 7); return d }
     if (periodo === '30d') { d.setDate(d.getDate() - 30); return d }
+    if (periodo === 'anio') return new Date(d.getFullYear(), 0, 1)
     return new Date(0)
   }, [periodo])
 
@@ -97,7 +101,24 @@ export default function FinanzasPage() {
     }
     return out
   }, [ordenes])
-  const maxDia = Math.max(1, ...dias.map((d) => d.total))
+  // Balance del año: ventas por mes (solo cuando el periodo es "Este año")
+  const meses = useMemo(() => {
+    if (periodo !== 'anio') return [] as { label: string; total: number }[]
+    const year = new Date().getFullYear()
+    return NOMBRES_MES.map((label, mes) => {
+      const inicio = new Date(year, mes, 1)
+      const fin = new Date(year, mes + 1, 1)
+      const total = ordenes
+        .filter((o) => { const t = new Date(o.created_at); return t >= inicio && t < fin })
+        .reduce((s, o) => s + Number(o.total), 0)
+      return { label, total }
+    })
+  }, [ordenes, periodo])
+
+  const esAnio = periodo === 'anio'
+  const chartDatos = esAnio ? meses : dias
+  const chartMax = Math.max(1, ...chartDatos.map((d) => d.total))
+  const chartTitulo = esAnio ? `Ventas por mes · ${new Date().getFullYear()}` : 'Ventas últimos 7 días'
 
   async function agregarGasto(g: { concepto: string; monto: number; categoria: CategoriaGasto }) {
     setModal(false)
@@ -218,19 +239,22 @@ export default function FinanzasPage() {
 
             {/* Chart + Top productos */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-              {/* Ventas por día */}
+              {/* Ventas por día (o por mes en "Este año") */}
               <div className="rounded-2xl p-5 animate-in" style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow-sm)' }}>
-                <h3 className="font-semibold text-sm mb-4" style={{ color: 'var(--espresso)' }}>Ventas últimos 7 días</h3>
-                <div className="flex items-end justify-between gap-2" style={{ height: 140 }}>
-                  {dias.map((d, i) => (
+                <h3 className="font-semibold text-sm mb-4" style={{ color: 'var(--espresso)' }}>{chartTitulo}</h3>
+                <div className="flex items-end justify-between gap-1.5" style={{ height: 140 }}>
+                  {chartDatos.map((d, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                      <span className="text-[0.6rem] font-semibold tabular-nums" style={{ color: 'var(--text-muted)' }}>
-                        {d.total > 0 ? formatMoneyShort(d.total) : ''}
-                      </span>
+                      {!esAnio && (
+                        <span className="text-[0.6rem] font-semibold tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                          {d.total > 0 ? formatMoneyShort(d.total) : ''}
+                        </span>
+                      )}
                       <div
                         className="w-full rounded-t-lg transition-all duration-500"
+                        title={formatMoney(d.total)}
                         style={{
-                          height: `${Math.max(4, (d.total / maxDia) * 100)}%`,
+                          height: `${Math.max(4, (d.total / chartMax) * 100)}%`,
                           background: d.total > 0 ? 'linear-gradient(to top, #C9A96E, #D4A853)' : 'var(--border-soft)',
                           minHeight: 4,
                         }}
